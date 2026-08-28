@@ -672,10 +672,13 @@ test('baseQuarterOf is the calendar quarter containing the bid date', () => {
 test('resolveBaseRates applies a different rule per component', () => {
   const { bases, missing } = resolveBaseRates(rates, CONTRACT_168, COMPONENTS_168);
   assert.deepEqual(missing, []);
-  assert.equal(bases.get('labour')!.value, 126.2);
-  assert.equal(bases.get('material')!.value, 99.4);
-  assert.equal(bases.get('cement')!.value, 98.6);
-  assert.ok(Math.abs(bases.get('steel')!.value! - 92.76666666666667) < 1e-9);
+  // Averaging three floats leaves artefacts (99.39999999999999), exactly as the
+  // source workbook does, so these compare with a tolerance rather than strictly.
+  const near = (a: number, b: number) => assert.ok(Math.abs(a - b) < 1e-9, `${a} != ${b}`);
+  near(bases.get('labour')!.value!, 126.2);
+  near(bases.get('material')!.value!, 99.4);
+  near(bases.get('cement')!.value!, 98.6);
+  near(bases.get('steel')!.value!, 92.76666666666667);
   // POL's base is the bid month alone, not the quarter average of 89.9.
   assert.equal(bases.get('pol')!.value, 90.8);
   assert.deepEqual(bases.get('pol')!.sourceMonths, ['2023-09']);
