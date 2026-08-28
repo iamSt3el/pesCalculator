@@ -182,6 +182,17 @@ The schedule lists every month whose computed amount is non-zero, plus any month
 operator has given an adjustment. In the source contract that is Sep-2023 through
 Feb-2024 — the six months carrying work.
 
+**Rounding must preserve the total.** Rounding each month independently loses money:
+the six exact monthly amounts round to 21,717,358, one rupee short of the Work Done
+Amount. This is precisely why the source workbook contains a hand-typed `5572218`
+where the calculation yields 5,572,217.11 — a manual patch for a rounding shortfall.
+The application instead allocates by **largest remainder**: floor every month, then
+distribute the shortfall one rupee at a time to the months with the largest discarded
+fractions. The rounded figures then sum to the Work Done Amount by construction, with
+no manual correction. Verified against the source contract: largest-remainder
+allocation and the workbook's hand-patched figures produce identical component totals
+to the paisa and the same payable of ₹1,72,604.
+
 The UI warns, without blocking, when the schedule total drifts from the Work Done
 Amount. Bitumen consumes the monthly figures; the other five consume the quarterly
 sums of the same figures.
