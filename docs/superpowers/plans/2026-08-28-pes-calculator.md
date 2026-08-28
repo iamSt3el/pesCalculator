@@ -1832,10 +1832,16 @@ authRouter.post('/login', loginLimiter, async (req, res) => {
   }
 
   // Rotate the session id on login so a pre-auth cookie cannot be replayed.
-  req.session.regenerate((err) => {
-    if (err) { res.status(500).json({ error: 'Could not start session' }); return; }
+  req.session.regenerate((regenErr) => {
+    if (regenErr) { res.status(500).json({ error: 'Could not start session' }); return; }
     req.session.user = { id: user.id, email: user.email, role: user.role };
-    res.json(req.session.user);
+    // Persist before responding. express-session otherwise writes to the store
+    // in its res.end hook, so the client's next request can arrive before the
+    // session exists and be rejected as signed out.
+    req.session.save((saveErr) => {
+      if (saveErr) { res.status(500).json({ error: 'Could not start session' }); return; }
+      res.json(req.session.user);
+    });
   });
 });
 
