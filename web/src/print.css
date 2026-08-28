@@ -1,0 +1,10 @@
+@media print {
+  .shell__nav, button, .no-print { display: none !important; }
+  .shell { display: block; }
+  body { background: #fff; }
+  .shell__main { max-width: none !important; padding: 0 !important; }
+  .report { font-family: var(--serif); color: #000; }
+  .report section { break-inside: avoid; }
+  .card { border: none; padding: 0; }
+  @page { size: A4; margin: 18mm 16mm; }
+}
