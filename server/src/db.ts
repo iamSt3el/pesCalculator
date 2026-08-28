@@ -8,8 +8,33 @@ pg.types.setTypeParser(pg.types.builtins.NUMERIC, (v: string) => Number(v));
 // DATE must not become a local-midnight Date; keep the wire format.
 pg.types.setTypeParser(pg.types.builtins.DATE, (v: string) => v);
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) throw new Error('DATABASE_URL is not set');
+/**
+ * The test suite calls DROP SCHEMA, so it must never reach a working database.
+ * Under NODE_ENV=test we require TEST_DATABASE_URL and refuse anything whose
+ * database name does not end in _test.
+ */
+function resolveConnectionString(): string {
+  if (process.env.NODE_ENV === 'test') {
+    const testUrl = process.env.TEST_DATABASE_URL;
+    if (!testUrl) {
+      throw new Error(
+        'TEST_DATABASE_URL is not set. Tests drop the schema, so they need their own database.',
+      );
+    }
+    const name = new URL(testUrl).pathname.replace(/^\//, '');
+    if (!name.endsWith('_test')) {
+      throw new Error(
+        `Refusing to run tests against "${name}": the database name must end in _test.`,
+      );
+    }
+    return testUrl;
+  }
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error('DATABASE_URL is not set');
+  return url;
+}
+
+const connectionString = resolveConnectionString();
 
 const isLocal = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
 
