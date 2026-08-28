@@ -1,0 +1,12 @@
+{
+  "name": "pes-calculator",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24" },
+  "workspaces": ["engine", "server", "web"],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present"
+  },
+  "devDependencies": { "typescript": "^5.9.3" }
+}
