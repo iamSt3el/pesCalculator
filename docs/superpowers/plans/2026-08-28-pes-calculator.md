@@ -124,6 +124,8 @@ Split by responsibility, not by layer: each engine module owns one rule from the
     "noUncheckedIndexedAccess": true,
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "declaration": true,
     "skipLibCheck": true
   }
