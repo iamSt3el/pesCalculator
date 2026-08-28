@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../auth/middleware.ts';
+import { calculationRouter } from './calculation.ts';
 import {
   createContract, deleteContract, getContract, listContracts,
   replaceAdjustments, replaceComponents, replaceProgress, updateContract,
@@ -50,6 +51,9 @@ contractsRouter.post('/', async (req, res) => {
   if (!parsed.success) { res.status(400).json({ error: 'An agreement number is required' }); return; }
   res.status(201).json(await createContract(parsed.data.agreementNo));
 });
+
+// Mounted before /:id so the calculation path is matched by its own router.
+contractsRouter.use('/:id/calculation', calculationRouter);
 
 contractsRouter.get('/:id', async (req, res) => {
   const contractId = parseId(req.params.id);
