@@ -21,10 +21,16 @@ async function loadRates(): Promise<RateRow[]> {
   }));
 }
 
-/** Loads the shared rates chart and the source contract, idempotently. */
-export async function seedDatabase(): Promise<{ rates: number; contractId: number }> {
+/**
+ * Loads the shared rates chart and, unless ratesOnly, the source contract.
+ * Idempotent: safe to run against an existing database.
+ */
+export async function seedDatabase(
+  { ratesOnly = false }: { ratesOnly?: boolean } = {},
+): Promise<{ rates: number; contractId: number | null }> {
   const rates = await loadRates();
   await upsertRates(rates);
+  if (ratesOnly) return { rates: rates.length, contractId: null };
 
   const agreementNo = '168 of 2023-24';
   const existing = await pool.query<{ id: number }>(
@@ -70,9 +76,14 @@ export async function seedDatabase(): Promise<{ rates: number; contractId: numbe
   return { rates: rates.length, contractId };
 }
 
-// Allow `npm run seed -w @pes/server`.
+// Allow `npm run seed` and `npm run seed -- --rates-only`.
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { rates, contractId } = await seedDatabase();
-  console.log(`Seeded ${rates} rate months and contract #${contractId}.`);
+  const ratesOnly = process.argv.includes('--rates-only');
+  const { rates, contractId } = await seedDatabase({ ratesOnly });
+  console.log(
+    contractId === null
+      ? `Seeded ${rates} rate months.`
+      : `Seeded ${rates} rate months and contract #${contractId}.`,
+  );
   await pool.end();
 }

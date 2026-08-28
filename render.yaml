@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: pes-calculator
+    runtime: node
+    plan: free
+    region: singapore          # closest Render region to India
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: NODE_ENV
+        value: production
+      # Paste the Neon POOLED connection string here in the Render dashboard.
+      - key: DATABASE_URL
+        sync: false
+      # Generated once by Render and kept; changing it signs everyone out.
+      - key: SESSION_SECRET
+        generateValue: true

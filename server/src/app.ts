@@ -28,7 +28,10 @@ export function createApp(): express.Express {
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      // 'auto' derives the flag from the request (via trust proxy), so the
+      // cookie is secure behind Render's TLS but still works over plain HTTP
+      // when running a production build locally.
+      secure: 'auto',
       maxAge: 12 * 60 * 60 * 1000,
     },
   }));
