@@ -1,11 +1,36 @@
+/* On screen the three sheets read as one scrolling document, separated by a
+   rule; on paper each one starts its own page. */
+.sheet + .sheet {
+  margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--rule);
+}
+.sheet__title {
+  font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ink-muted); margin: 0 0 14px;
+}
+
 @media print {
   .shell__nav, button, .no-print { display: none !important; }
   .shell { display: block; }
   body { background: #fff; }
-  .shell__main { max-width: none !important; padding: 0 !important; }
-  .report .paper { border: none; border-radius: 0; padding: 0; }
+  /* The sheet's margin lives here rather than in @page, so that @page can be
+     zero — Chrome draws its URL/title/date strip in the page margin, and with
+     no margin there is nowhere for it to go. Page numbers go with it. */
+  .shell__main { max-width: none !important; padding: 16mm 14mm !important; }
+  /* Doubled class only to outrank the screen card: this file is bundled
+     before styles.css, so at equal specificity the screen rule would win. */
+  .report .paper.paper { border: none; border-radius: 0; padding: 0; }
   .report { color: #000; }
   .report .component { break-inside: avoid; }
   .formula-block { overflow: visible; }
-  @page { size: A4; margin: 16mm 14mm; }
+
+  /* One stage per sheet. The last takes no break after it, or printers that
+     honour it emit a trailing blank page. */
+  .sheet { break-after: page; }
+  .sheet--last { break-after: auto; }
+  .sheet + .sheet { margin-top: 0; padding-top: 0; border-top: none; }
+  .sheet__title { color: #000; }
+  /* A scrolling box clips its overflow on paper — let the tables run on. */
+  .scroller, .scroller--short { max-height: none !important; overflow: visible !important; }
+
+  @page { size: A4; margin: 0; }
 }

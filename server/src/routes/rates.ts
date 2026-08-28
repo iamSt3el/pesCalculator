@@ -2,7 +2,7 @@ import type { RateRow } from '@pes/engine';
 import { Router } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../auth/middleware.ts';
-import { listRates, upsertRates } from '../repo/rates.ts';
+import { deleteRate, listRates, upsertRates } from '../repo/rates.ts';
 
 const rateSchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/, 'Month must be YYYY-MM'),
@@ -66,4 +66,14 @@ ratesRouter.post('/paste', async (req, res) => {
   const { rows, errors } = parsePastedRates(parsed.data.text);
   const written = await upsertRates(rows);
   res.json({ written, errors, rates: await listRates() });
+});
+
+ratesRouter.delete('/:month', async (req, res) => {
+  const month = req.params.month;
+  if (!/^\d{4}-\d{2}$/.test(month)) {
+    res.status(400).json({ error: 'Month must be YYYY-MM' }); return;
+  }
+  const removed = await deleteRate(month);
+  if (!removed) { res.status(404).json({ error: 'That month is not in the chart' }); return; }
+  res.json({ rates: await listRates() });
 });

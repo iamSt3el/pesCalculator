@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parsePastedRates } from '../src/routes/rates.ts';
-import { listRates, upsertRates } from '../src/repo/rates.ts';
+import { deleteRate, listRates, upsertRates } from '../src/repo/rates.ts';
 import { pool } from '../src/db.ts';
 import { runMigrations } from '../src/migrate.ts';
 
@@ -60,4 +60,20 @@ test('parsePastedRates reports an unreadable month instead of silently dropping 
   assert.equal(rows.length, 1);
   assert.equal(errors.length, 1);
   assert.ok(errors[0]!.includes('not-a-month'));
+});
+
+test('deleteRate removes one month and leaves the rest alone', async () => {
+  await upsertRates([
+    { month: '2030-01', labour: 1, material: null, cement: null, steel: null, pol: null, bitumenG: null, bitumenH: null },
+    { month: '2030-02', labour: 2, material: null, cement: null, steel: null, pol: null, bitumenG: null, bitumenH: null },
+  ]);
+  const removed = await deleteRate('2030-01');
+  assert.equal(removed, true);
+  const months = (await listRates()).map((r) => r.month);
+  assert.equal(months.includes('2030-01'), false);
+  assert.equal(months.includes('2030-02'), true);
+});
+
+test('deleting a month that is not there reports false rather than throwing', async () => {
+  assert.equal(await deleteRate('1999-01'), false);
 });

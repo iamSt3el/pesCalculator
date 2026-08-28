@@ -39,3 +39,9 @@ export async function upsertRates(rows: RateRow[]): Promise<number> {
   );
   return rowCount ?? 0;
 }
+
+/** Removes one month from the shared chart. Returns false if it was not there. */
+export async function deleteRate(month: string): Promise<boolean> {
+  const { rowCount } = await pool.query('DELETE FROM rates WHERE month = $1::date', [`${month}-01`]);
+  return (rowCount ?? 0) > 0;
+}

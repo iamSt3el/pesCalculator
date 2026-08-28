@@ -9,7 +9,7 @@ import { useContract } from '../ContractLayout.tsx';
 const RULE_LABELS: Record<BaseRule, string> = {
   quarter_average: 'Average of the base quarter',
   bid_month: 'Month of the bid date',
-  offset_month: 'Month before the bid, by the offset',
+  offset_month: 'Offset month before the bid',
 };
 
 export function ComponentTable() {

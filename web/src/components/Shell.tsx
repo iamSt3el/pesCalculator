@@ -10,6 +10,7 @@ const STAGES = [
   { to: 'index-average', label: 'Index Average', key: 'indexAverage' },
   { to: 'base-rate', label: 'Base Rate', key: 'baseRate' },
   { to: 'calculation', label: 'Calculation', key: 'calculation' },
+  { to: 'print', label: 'Print bill', key: 'print' },
 ] as const;
 
 interface Props {

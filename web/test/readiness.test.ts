@@ -28,3 +28,11 @@ test('the rates stage is not ready while the chart is empty', () => {
   assert.equal(computeReadiness(complete, [], null).rates, false);
   assert.equal(computeReadiness(complete, [{ month: '2023-09' }], null).rates, true);
 });
+
+test('the print stage fills in only once the bill is free of problems', () => {
+  const clean = { problems: [], payable: 172_604 };
+  const withProblem = { problems: [{ code: 'missing_rates' }], payable: 0 };
+  assert.equal(computeReadiness(complete, [{ month: '2023-09' }], null).print, false);
+  assert.equal(computeReadiness(complete, [{ month: '2023-09' }], withProblem).print, false);
+  assert.equal(computeReadiness(complete, [{ month: '2023-09' }], clean).print, true);
+});

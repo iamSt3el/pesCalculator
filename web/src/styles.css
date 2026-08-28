@@ -75,7 +75,9 @@ a { color: var(--stamp); text-underline-offset: 2px; }
   display: flex; flex-direction: column; gap: 20px;
   position: sticky; top: 0; height: 100vh; overflow-y: auto;
 }
-.shell__main { padding: 32px 36px 80px; max-width: var(--measure); }
+/* min-width:0 or the 1fr track refuses to shrink below its widest table,
+   and a wide grid drags the whole page sideways instead of scrolling itself. */
+.shell__main { padding: 32px 36px 80px; max-width: var(--measure); min-width: 0; }
 
 .rail-back { font-size: 13px; text-decoration: none; color: var(--ink-muted); }
 .rail-back:hover { color: var(--stamp); }
@@ -184,6 +186,9 @@ input.cell:focus { border-color: var(--stamp); background: var(--surface); }
 input.cell::-webkit-outer-spin-button,
 input.cell::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input.cell[type='number'] { -moz-appearance: textfield; }
+/* A floor per cell, so a narrow window scrolls the grid sideways rather
+   than shaving digits off the right of every figure. */
+input.cell { min-width: 4.5rem; }
 
 button {
   font: inherit; font-size: 14px; font-weight: 500;
@@ -198,15 +203,48 @@ button.ghost:hover { background: var(--paper); filter: none; border-color: var(-
 button.danger { background: var(--surface); color: var(--recovery); border-color: var(--rule); }
 button.small { padding: 4px 10px; font-size: 13px; }
 
+/* A month the chart could hold but does not — one click from being a row. */
+button.chip {
+  padding: 4px 10px; font-size: 13px; font-weight: 400;
+  background: var(--surface); color: var(--stamp);
+  border: 1px dashed var(--rule-strong); border-radius: 999px;
+}
+button.chip:hover { filter: none; border-color: var(--stamp); background: var(--stamp-wash); }
+
+/* Row removal: present on every row, insistent on none. */
+button.erase {
+  padding: 0; width: 24px; height: 24px; line-height: 1;
+  background: transparent; color: var(--ink-faint);
+  border: 1px solid transparent; border-radius: 4px;
+}
+tr:hover button.erase { color: var(--ink-muted); border-color: var(--rule); }
+button.erase:hover { filter: none; color: var(--recovery); border-color: var(--recovery); background: var(--surface); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
 select.cell {
-  font-size: 13px; padding: 4px 6px; width: 100%;
+  font-size: 13px; padding: 4px 22px 4px 6px; width: 100%;
   border: 1px solid transparent; border-radius: 4px; background: transparent;
 }
 select.cell:hover { border-color: var(--rule-strong); background: var(--surface); }
 select.cell:focus { border-color: var(--stamp); background: var(--surface); }
 
-label.field { display: grid; gap: 4px; font-size: 12px; color: var(--ink-muted); }
+/* align-content:start, or a field without an echo stretches its input to match
+   the tallest field in the row. */
+label.field { display: grid; gap: 4px; font-size: 12px; color: var(--ink-muted);
+  align-content: start; }
 label.field > input, label.field > select { color: var(--ink); font-size: 14px; }
+
+/* Reads back what was just typed, in the form the bill is written in: a date
+   input follows the reader's own locale, and a money input groups nothing. */
+.echo {
+  font-size: 12px; color: var(--ink-muted); font-variant-numeric: tabular-nums;
+  min-height: 16px;
+}
+.echo--num { text-align: right; font-family: var(--mono); }
 
 /* ---- notices ------------------------------------------------------------- */
 .notice {

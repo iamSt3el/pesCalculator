@@ -6,23 +6,40 @@ import { useEffect, useRef, useState } from 'react';
  */
 export function useDebouncedSave<T>(save: (value: T) => Promise<unknown>, delay = 500) {
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pending = useRef<{ value: T } | null>(null);
+  const latest = useRef(save);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  latest.current = save;
   useEffect(() => () => clearTimeout(timer.current), []);
+
+  const run = (value: T): Promise<void> => {
+    pending.current = null;
+    setSaving(true);
+    return latest.current(value)
+      .then(() => setError(null))
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setSaving(false));
+  };
 
   return {
     saving,
     error,
     schedule(value: T) {
       clearTimeout(timer.current);
-      timer.current = setTimeout(() => {
-        setSaving(true);
-        save(value)
-          .then(() => setError(null))
-          .catch((e: Error) => setError(e.message))
-          .finally(() => setSaving(false));
-      }, delay);
+      pending.current = { value };
+      timer.current = setTimeout(() => void run(value), delay);
+    },
+    /**
+     * Lands a waiting edit now instead of in half a second. Needed before any
+     * write that is not a whole-collection replace — a delete, say — because
+     * the queued save would otherwise put the removed row straight back.
+     */
+    flush(): Promise<void> {
+      clearTimeout(timer.current);
+      const held = pending.current;
+      return held ? run(held.value) : Promise.resolve();
     },
   };
 }

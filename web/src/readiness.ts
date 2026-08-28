@@ -4,6 +4,7 @@ export interface StageReadiness {
   indexAverage: boolean;
   baseRate: boolean;
   calculation: boolean;
+  print: boolean;
 }
 
 interface ReadinessBundle {
@@ -34,5 +35,6 @@ export function computeReadiness(
     indexAverage: derived,
     baseRate: derived,
     calculation: derived,
+    print: derived,
   };
 }

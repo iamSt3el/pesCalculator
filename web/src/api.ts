@@ -32,6 +32,7 @@ export const api = {
 
   listRates: () => call<RateRow[]>('/api/rates'),
   putRates: (rows: RateRow[]) => send<{ written: number; rates: RateRow[] }>('/api/rates', 'PUT', rows),
+  deleteRate: (month: string) => call<{ rates: RateRow[] }>(`/api/rates/${month}`, { method: 'DELETE' }),
   pasteRates: (text: string) =>
     send<{ written: number; errors: string[]; rates: RateRow[] }>('/api/rates/paste', 'POST', { text }),
 
