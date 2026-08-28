@@ -4,6 +4,7 @@ import session from 'express-session';
 import helmet from 'helmet';
 import { authRouter, usersRouter } from './auth/routes.ts';
 import { pool } from './db.ts';
+import { ratesRouter } from './routes/rates.ts';
 
 export function createApp(): express.Express {
   const app = express();
@@ -31,6 +32,8 @@ export function createApp(): express.Express {
   app.get('/api/health', (_req, res) => { res.json({ ok: true }); });
   app.use('/api/auth', authRouter);
   app.use('/api/users', usersRouter);
+
+  app.use('/api/rates', ratesRouter);
 
   // Routes from later tasks mount here.
 
