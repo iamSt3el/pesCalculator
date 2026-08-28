@@ -105,7 +105,7 @@ Either point Render at `render.yaml` (**New → Blueprint**), or create a
 | Setting | Value |
 |---|---|
 | Runtime | Node |
-| Build command | `npm ci && npm run build` |
+| Build command | `npm ci --include=dev && npm run build` |
 | Start command | `npm start` |
 | Health check path | `/api/health` |
 
@@ -117,6 +117,10 @@ Either point Render at `render.yaml` (**New → Blueprint**), or create a
 | `SESSION_SECRET` | any 32-byte random value — `openssl rand -hex 32`. Render generates one from `render.yaml`. Changing it later signs everyone out. |
 | `NODE_ENV` | `production` |
 | `NODE_VERSION` | `24` |
+
+> **The build command must be `npm ci --include=dev`.** With
+> `NODE_ENV=production` set, npm skips `devDependencies` — which is where
+> `tsc` and `vite` live — and the build fails with `vite: not found`.
 
 Leave `TEST_DATABASE_URL` unset in production. Nothing there runs tests, and
 its absence is one more guard against a destructive run.
