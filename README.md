@@ -149,6 +149,47 @@ administrator; every later account has to be created by an administrator.
 
 ---
 
+## Keeping the free instance awake
+
+Render spins a free service down after about 15 minutes of inactivity, and the
+next visitor waits 50 seconds or more for it to boot. `.github/workflows/keep-warm.yml`
+pings `/api/health` every 5 minutes during working hours so the service is up
+when anyone would use it, and asleep overnight so the free instance-hours are
+not spent idling.
+
+**Setup** — one variable, no code change:
+
+> Repo → Settings → Secrets and variables → Actions → **Variables** → New
+> Name `RENDER_URL`, value `https://<your-service>.onrender.com`
+
+Then run it once by hand to check: Actions → Keep warm → Run workflow.
+
+**The budget it is designed around:**
+
+| | |
+|---|---|
+| Awake window | 08:30 – 20:25 IST, Monday to Saturday |
+| Render instance-hours | ~312/month, against a free allowance of 750 |
+| Ping interval | 5 minutes — two runs can be skipped and the service still stays awake |
+| GitHub Actions minutes | free and unlimited **while this repo is public** |
+
+**Two caveats worth knowing:**
+
+- **If you make the repo private**, this workflow costs ~3,700 Actions minutes a
+  month against a 2,000-minute free allowance. Switch to the external pinger
+  below, or widen the interval to 10 minutes and narrow the window.
+- **GitHub disables scheduled workflows after 60 days without a commit.** If the
+  project goes quiet, the pings stop silently. Any commit re-enables them.
+
+**A more reliable alternative:** point [cron-job.org](https://cron-job.org) or
+UptimeRobot at `https://<your-service>.onrender.com/api/health` every 5 minutes
+with the same time window. Both are free, neither is subject to GitHub's
+scheduling delays or the 60-day rule, and neither spends Actions minutes. If you
+use one, delete the workflow so you are not doing the job twice.
+
+Neither approach is a substitute for Render's paid Starter plan (~$7/month),
+which simply does not spin down.
+
 ## Notes
 
 - **The free Render plan sleeps when idle**, so the first request after a
