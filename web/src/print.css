@@ -3,8 +3,9 @@
   .shell { display: block; }
   body { background: #fff; }
   .shell__main { max-width: none !important; padding: 0 !important; }
-  .report { font-family: var(--serif); color: #000; }
-  .report section { break-inside: avoid; }
-  .card { border: none; padding: 0; }
-  @page { size: A4; margin: 18mm 16mm; }
+  .report .paper { border: none; border-radius: 0; padding: 0; }
+  .report { color: #000; }
+  .report .component { break-inside: avoid; }
+  .formula-block { overflow: visible; }
+  @page { size: A4; margin: 16mm 14mm; }
 }

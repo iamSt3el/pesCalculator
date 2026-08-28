@@ -19,8 +19,11 @@ export function PasteBox({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <form onSubmit={submit} className="card" style={{ marginBottom: 16 }}>
-      <h3>Paste rows copied from Excel</h3>
+    <details className="panel" style={{ marginBottom: 16 }}>
+      <summary style={{ cursor: 'pointer', fontSize: 14 }}>
+        Paste rows copied from Excel
+      </summary>
+      <form onSubmit={submit} style={{ marginTop: 14 }}>
       <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4}
                 style={{ width: '100%', fontFamily: 'var(--mono)', fontSize: 13 }}
                 placeholder={'2023-07\t130.0\t99.1\t98.1\t91.5\t89.1\t38472\t36972'} />
@@ -46,6 +49,7 @@ export function PasteBox({ onDone }: { onDone: () => void }) {
           )}
         </>
       )}
-    </form>
+      </form>
+    </details>
   );
 }

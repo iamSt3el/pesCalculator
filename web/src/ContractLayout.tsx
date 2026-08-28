@@ -50,7 +50,13 @@ export function ContractLayout({ onSignOut }: { onSignOut: () => void }) {
   const context: ContractContext = { bundle, rates, calculation, reload, setBundle };
 
   return (
-    <Shell readiness={readiness} agreementNo={bundle.contract.agreementNo} onSignOut={onSignOut}>
+    <Shell
+      readiness={readiness}
+      agreementNo={bundle.contract.agreementNo}
+      contractor={bundle.contract.contractor}
+      calculation={calculation}
+      onSignOut={onSignOut}
+    >
       <Outlet context={context} />
     </Shell>
   );

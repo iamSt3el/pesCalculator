@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import connectPgSimple from 'connect-pg-simple';
 import express from 'express';
 import session from 'express-session';
@@ -37,7 +40,15 @@ export function createApp(): express.Express {
   app.use('/api/rates', ratesRouter);
   app.use('/api/contracts', contractsRouter);
 
-  // Routes from later tasks mount here.
+  // An unmatched /api path is a client error, not a missing page.
+  app.use('/api', (_req, res) => { res.status(404).json({ error: 'No such endpoint' }); });
+
+  const webDist = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'web', 'dist');
+  if (existsSync(webDist)) {
+    app.use(express.static(webDist, { index: false, maxAge: '1h' }));
+    // Deep links are client-routed, so every non-API path gets the shell.
+    app.get(/.*/, (_req, res) => { res.sendFile(join(webDist, 'index.html')); });
+  }
 
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error(err);

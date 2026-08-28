@@ -38,13 +38,13 @@ export function BaseRatePage() {
 
   return (
     <>
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h1 style={{ fontFamily: 'var(--serif)' }}>Base Rate</h1>
-        <span className="hint">{saver.saving ? 'Saving…' : 'Saved'}</span>
+      <div className="spread">
+        <h1 className="title">Base Rate</h1>
+        <span className="saving">{saver.saving ? 'Saving…' : 'All changes saved'}</span>
       </div>
 
-      <section className="card">
-        <h3>Contract</h3>
+      <section className="panel">
+        <p className="eyebrow">Contract</p>
         <div className="grid-fields">
           <div><div className="hint">Agreement no.</div>{contract.agreementNo || '—'}</div>
           <div><div className="hint">Contractor</div>{contract.contractor || '—'}</div>
@@ -57,11 +57,11 @@ export function BaseRatePage() {
 
       <section style={{ marginTop: 28 }}>
         <h2>Base index per component</h2>
-        <p className="hint" style={{ marginTop: 0 }}>
+        <p className="subtitle">
           Each component takes its base from a different place. Type a value to override one.
         </p>
 
-        <div className="card scroller" style={{ padding: 0 }}>
+        <div className="panel panel--flush scroller">
           <table className="grid">
             <thead>
               <tr>
@@ -90,7 +90,7 @@ export function BaseRatePage() {
                       {formatIndex(base?.value ?? null, key === 'bitumen' ? 0 : 4)}
                     </td>
                     <td>
-                      <input className="num" type="number" step="0.0001"
+                      <input className="cell" type="number" step="0.0001"
                              value={row?.baseOverride ?? ''} placeholder="auto"
                              onChange={(e) => setOverride(key, e.target.value)} />
                     </td>

@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
+import type { Calculation } from '../api.ts';
+import { formatRupees } from '../format.ts';
 import type { StageReadiness } from '../readiness.ts';
 
 const STAGES = [
@@ -13,21 +15,50 @@ const STAGES = [
 interface Props {
   readiness: StageReadiness;
   agreementNo: string;
+  contractor: string;
+  calculation: Calculation | null;
   onSignOut: () => void;
   children: ReactNode;
 }
 
-export function Shell({ readiness, agreementNo, onSignOut, children }: Props) {
+/** The payable, kept in view from every stage so an edit's effect is never hidden. */
+function RunningTotal({ calculation }: { calculation: Calculation | null }) {
+  const settled = calculation && calculation.problems.length === 0;
+  if (!calculation) {
+    return (
+      <div className="rail-total rail-total--pending">
+        <div className="rail-total__label">This bill</div>
+        <div className="rail-total__value">—</div>
+        <div className="rail-total__note">Awaiting Main Data</div>
+      </div>
+    );
+  }
+  return (
+    <div className={`rail-total${settled ? '' : ' rail-total--pending'}`}>
+      <div className="rail-total__label">{settled ? 'This bill' : 'Provisional'}</div>
+      <div className="rail-total__value">₹{formatRupees(calculation.payable)}</div>
+      <div className="rail-total__note">
+        {settled
+          ? `${calculation.quarters.length} quarters · base ${calculation.baseQuarter}`
+          : `${calculation.problems.length} thing${calculation.problems.length === 1 ? '' : 's'} to fix`}
+      </div>
+    </div>
+  );
+}
+
+export function Shell({ readiness, agreementNo, contractor, calculation, onSignOut, children }: Props) {
   const { id } = useParams();
   return (
     <div className="shell">
       <nav className="shell__nav">
-        <NavLink to="/" style={{ display: 'block', marginBottom: 14, fontSize: 13, textDecoration: 'none' }}>
-          ← All contracts
-        </NavLink>
-        <div style={{ fontFamily: 'var(--serif)', fontSize: 15, marginBottom: 14, lineHeight: 1.3 }}>
-          {agreementNo || 'Untitled contract'}
+        <div>
+          <NavLink to="/" className="rail-back">← All contracts</NavLink>
+          <div className="rail-title" style={{ marginTop: 12 }}>{agreementNo || 'Untitled contract'}</div>
+          {contractor && <div className="rail-sub">{contractor}</div>}
         </div>
+
+        <RunningTotal calculation={calculation} />
+
         <div className="stage-rail">
           {STAGES.map((s, i) => (
             <NavLink
@@ -41,7 +72,8 @@ export function Shell({ readiness, agreementNo, onSignOut, children }: Props) {
             </NavLink>
           ))}
         </div>
-        <button className="ghost no-print" onClick={onSignOut} style={{ marginTop: 24, fontSize: 13 }}>
+
+        <button className="ghost small no-print" onClick={onSignOut} style={{ marginTop: 'auto' }}>
           Sign out
         </button>
       </nav>

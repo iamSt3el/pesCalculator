@@ -34,13 +34,13 @@ export function ScheduleTable() {
 
   return (
     <section style={{ marginTop: 28 }}>
-      <h2>Schedule of payment</h2>
-      <p className="hint" style={{ marginTop: 0 }}>
+      <div className="section-head"><h2>Schedule of payment</h2></div>
+      <p className="subtitle">
         Computed from the days entered on Main Data, allocated so the months total the work done
         amount exactly. Adjust any month to match the bill actually paid.
       </p>
 
-      <div className="card scroller" style={{ padding: 0 }}>
+      <div className="panel panel--flush scroller">
         <table className="grid">
           <thead>
             <tr>
@@ -56,7 +56,7 @@ export function ScheduleTable() {
                 <td style={{ whiteSpace: 'nowrap' }}>{formatMonth(r.month)}</td>
                 <td style={{ textAlign: 'right' }}><Computed value={r.computed} /></td>
                 <td>
-                  <input className="num" type="number" step="1"
+                  <input className="cell" type="number" step="1"
                          value={adjustmentFor(r.month) || ''} placeholder="0"
                          onChange={(e) => setAdjustment(r.month, Number(e.target.value) || 0)} />
                 </td>
@@ -82,8 +82,8 @@ export function ScheduleTable() {
         </p>
       )}
 
-      <div className="card" style={{ marginTop: 12 }}>
-        <h3>By quarter</h3>
+      <div className="panel" style={{ marginTop: 12 }}>
+        <p className="eyebrow">By quarter</p>
         <div className="row">
           {Object.entries(calculation.schedule.byQuarter).sort().map(([q, v]) => (
             <div key={q} style={{ minWidth: 150 }}>

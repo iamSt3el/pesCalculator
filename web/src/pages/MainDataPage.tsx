@@ -51,16 +51,16 @@ export function MainDataPage() {
 
   return (
     <>
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h1 style={{ fontFamily: 'var(--serif)' }}>Main Data</h1>
-        <span className="hint">{saver.saving ? 'Saving…' : 'Saved'}</span>
+      <div className="spread">
+        <h1 className="title">Main Data</h1>
+        <span className="saving">{saver.saving ? 'Saving…' : 'All changes saved'}</span>
       </div>
-      <p className="hint" style={{ marginTop: 0 }}>
+      <p className="subtitle">
         The particulars of the agreement. Everything downstream is derived from these.
       </p>
 
-      <section className="card">
-        <h3>Summary of agreement and work</h3>
+      <section className="panel">
+        <p className="eyebrow">Summary of agreement and work</p>
         <div className="grid-fields">
           {text('agreementNo', 'Agreement no.')}
           {text('contractor', 'Name of contractor')}
@@ -71,8 +71,8 @@ export function MainDataPage() {
         </div>
       </section>
 
-      <section className="card" style={{ marginTop: 16 }}>
-        <h3>Dates</h3>
+      <section className="panel" style={{ marginTop: 16 }}>
+        <p className="eyebrow">Dates</p>
         <div className="grid-fields">
           {date('bidDate', 'Last date of bid submission')}
           {date('commencement', 'Date of commencement')}

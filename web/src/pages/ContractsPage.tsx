@@ -30,18 +30,18 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
   }
 
   return (
-    <main style={{ maxWidth: 900, margin: '0 auto', padding: 24 }}>
+    <main style={{ maxWidth: 940, margin: '0 auto', padding: '40px 24px 80px' }}>
       <div className="row" style={{ justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--serif)', marginBottom: 2 }}>Price Escalation</h1>
-          <p className="hint" style={{ margin: 0 }}>Clause-45 billing</p>
+          <h1 className="title">Price Escalation</h1>
+          <p className="subtitle">Clause-45 billing</p>
         </div>
         <button className="ghost" onClick={onSignOut}>Sign out</button>
       </div>
 
       {error && <p className="notice">{error}</p>}
 
-      <form onSubmit={create} className="card row" style={{ marginBottom: 20 }}>
+      <form onSubmit={create} className="panel row" style={{ marginBottom: 20 }}>
         <label className="field" style={{ flex: 1, minWidth: 220 }}>
           Agreement number
           <input value={agreementNo} onChange={(e) => setAgreementNo(e.target.value)}
@@ -54,11 +54,11 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
 
       {rows === null ? <p className="hint">Loading…</p>
         : rows.length === 0 ? (
-          <div className="card">
+          <div className="panel">
             <p style={{ margin: 0 }}>No contracts yet. Add an agreement number above to start one.</p>
           </div>
         ) : (
-          <div className="card scroller" style={{ padding: 0 }}>
+          <div className="panel panel--flush scroller">
             <table className="grid">
               <thead>
                 <tr><th>Agreement</th><th>Contractor</th><th>Work</th><th /></tr>

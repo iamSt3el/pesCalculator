@@ -31,12 +31,12 @@ export function ComponentTable() {
 
   return (
     <section style={{ marginTop: 28 }}>
-      <h2>Component shares</h2>
-      <p className="hint" style={{ marginTop: 0 }}>
+      <div className="section-head"><h2>Component shares</h2></div>
+      <p className="subtitle">
         The share of the work each component represents, and the factor from the agreement.
       </p>
 
-      <div className="card scroller" style={{ padding: 0 }}>
+      <div className="panel panel--flush scroller">
         <table className="grid">
           <thead>
             <tr>
@@ -55,17 +55,17 @@ export function ComponentTable() {
                 <tr key={key}>
                   <td>{COMPONENT_LABELS[key]}</td>
                   <td>
-                    <input className="num" type="number" step="0.01" min="0" max="100"
+                    <input className="cell" type="number" step="0.01" min="0" max="100"
                            value={row.percent}
                            onChange={(e) => update(key, { percent: Number(e.target.value) })} />
                   </td>
                   <td>
-                    <input className="num" type="number" step="0.05" min="0" max="2"
+                    <input className="cell" type="number" step="0.05" min="0" max="2"
                            value={row.factor}
                            onChange={(e) => update(key, { factor: Number(e.target.value) })} />
                   </td>
                   <td>
-                    <select value={row.baseRule}
+                    <select className="cell" value={row.baseRule}
                             onChange={(e) => update(key, { baseRule: e.target.value as BaseRule })}>
                       {(Object.keys(RULE_LABELS) as BaseRule[]).map((r) => (
                         <option key={r} value={r}>{RULE_LABELS[r]}</option>
@@ -73,7 +73,7 @@ export function ComponentTable() {
                     </select>
                   </td>
                   <td>
-                    <input className="num" type="number" step="0.0001"
+                    <input className="cell" type="number" step="0.0001"
                            value={row.baseOverride ?? ''}
                            placeholder="auto"
                            onChange={(e) => update(key, {

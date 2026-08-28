@@ -24,11 +24,11 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
   }
 
   return (
-    <main style={{ maxWidth: 340, margin: '14vh auto', padding: 16 }}>
-      <h1 style={{ fontFamily: 'var(--serif)', fontSize: 27, marginBottom: 2 }}>Price Escalation</h1>
-      <p className="hint" style={{ marginTop: 0 }}>Clause-45 billing</p>
+    <main style={{ maxWidth: 350, margin: '15vh auto', padding: 20 }}>
+      <h1 className="title">Price Escalation</h1>
+      <p className="subtitle">Clause-45 billing for PWD road contracts</p>
 
-      <form onSubmit={submit} style={{ display: 'grid', gap: 12, marginTop: 26 }}>
+      <form onSubmit={submit} className="panel" style={{ display: 'grid', gap: 14, marginTop: 26 }}>
         <label className="field">
           Email
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}

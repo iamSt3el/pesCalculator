@@ -2,11 +2,23 @@
   "name": "pes-calculator",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=24" },
-  "workspaces": ["engine", "server", "web"],
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "engine",
+    "server",
+    "web"
+  ],
   "scripts": {
     "test": "npm run test --workspaces --if-present",
-    "build": "npm run build --workspaces --if-present"
+    "build": "npm run build -w @pes/engine && npm run build -w @pes/web && npm run build -w @pes/server",
+    "start": "node --env-file-if-exists=.env server/dist/index.js",
+    "dev:server": "npm run dev -w @pes/server",
+    "dev:web": "npm run dev -w @pes/web",
+    "seed": "npm run seed -w @pes/server"
   },
-  "devDependencies": { "typescript": "^5.9.3" }
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
 }

@@ -51,11 +51,11 @@ export function RatesChartPage() {
 
   return (
     <>
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h1 style={{ fontFamily: 'var(--serif)' }}>Rates Chart</h1>
-        <span className="hint">{saver.saving ? 'Saving…' : 'Saved'}</span>
+      <div className="spread">
+        <h1 className="title">Rates Chart</h1>
+        <span className="saving">{saver.saving ? 'Saving…' : 'All changes saved'}</span>
       </div>
-      <p className="hint" style={{ marginTop: 0 }}>
+      <p className="subtitle">
         Shared across every contract. Published index figures — fill a month once.
       </p>
 
@@ -67,7 +67,7 @@ export function RatesChartPage() {
 
       <PasteBox onDone={() => void reload().then(() => setRows(rates))} />
 
-      <div className="card scroller" style={{ padding: 0 }}>
+      <div className="panel panel--flush scroller">
         <table className="grid">
           <thead>
             <tr>
@@ -82,7 +82,7 @@ export function RatesChartPage() {
                 <td style={{ whiteSpace: 'nowrap' }}>{formatMonth(row.month)}</td>
                 {COLUMNS.map((c) => (
                   <td key={c.field}>
-                    <input className="num" type="number" step="0.01"
+                    <input className="cell" type="number" step="0.01"
                            value={row[c.field] ?? ''} placeholder="—"
                            onChange={(e) => update(row.month, c.field, e.target.value)} />
                   </td>

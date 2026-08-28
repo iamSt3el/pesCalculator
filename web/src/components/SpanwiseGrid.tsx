@@ -59,8 +59,8 @@ export function SpanwiseGrid() {
   if (months.length === 0) {
     return (
       <section style={{ marginTop: 28 }}>
-        <h2>Work done, month by month</h2>
-        <div className="card">
+        <div className="section-head"><h2>Work done, month by month</h2></div>
+        <div className="panel">
           <p style={{ margin: 0 }}>
             Set the date of commencement and the actual date of completion above, and the months appear here.
           </p>
@@ -71,13 +71,13 @@ export function SpanwiseGrid() {
 
   return (
     <section style={{ marginTop: 28 }}>
-      <h2>Work done, month by month</h2>
-      <p className="hint" style={{ marginTop: 0 }}>
+      <div className="section-head"><h2>Work done, month by month</h2></div>
+      <p className="subtitle">
         Enter the days worked in each span. Amounts follow from the span rates.
       </p>
 
       {spans && (
-        <div className="card scroller" style={{ padding: 0, marginBottom: 12 }}>
+        <div className="panel panel--flush scroller--short" style={{ marginBottom: 12 }}>
           <table className="grid">
             <thead>
               <tr><th>Span</th><th>Days</th><th>Value</th><th>Per day</th><th>Ends</th></tr>
@@ -97,7 +97,7 @@ export function SpanwiseGrid() {
         </div>
       )}
 
-      <div className="card scroller" style={{ padding: 0 }}>
+      <div className="panel panel--flush scroller">
         <table className="grid">
           <thead>
             <tr>
@@ -117,7 +117,7 @@ export function SpanwiseGrid() {
                   <td style={{ whiteSpace: 'nowrap' }}>{formatMonth(month)}</td>
                   {[0, 1, 2, 3].map((i) => (
                     <td key={i}>
-                      <input className="num" type="number" min="0" max="31"
+                      <input className="cell" type="number" min="0" max="31"
                              value={days[i] || ''}
                              placeholder="0"
                              onChange={(e) => setDay(month, i, Number(e.target.value))} />

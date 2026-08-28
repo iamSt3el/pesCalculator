@@ -14,7 +14,7 @@ export function IndexAveragePage() {
 
   if (!calculation) {
     return <>
-      <h1 style={{ fontFamily: 'var(--serif)' }}>Index Average</h1>
+      <h1 className="title">Index Average</h1>
       <p className="hint">Fill in Main Data and the rates chart, and the quarter averages appear here.</p>
     </>;
   }
@@ -29,13 +29,13 @@ export function IndexAveragePage() {
 
   return (
     <>
-      <h1 style={{ fontFamily: 'var(--serif)' }}>Index Average</h1>
-      <p className="hint" style={{ marginTop: 0 }}>
+      <h1 className="title">Index Average</h1>
+      <p className="subtitle">
         Derived from the rates chart. Nothing here is entered by hand.
       </p>
 
       {quarters.map((q) => (
-        <section key={q} className="card scroller" style={{ padding: 0, marginBottom: 16 }}>
+        <section key={q} className="panel panel--flush scroller--short" style={{ marginBottom: 16 }}>
           <table className="grid">
             <thead>
               <tr>
