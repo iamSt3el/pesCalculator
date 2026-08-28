@@ -1,0 +1,30 @@
+{
+  "name": "@pes/server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "node --env-file=../.env --watch src/index.ts",
+    "test": "node --env-file=../.env --test 'test/**/*.test.ts'",
+    "seed": "node --env-file=../.env seed/seed.ts"
+  },
+  "dependencies": {
+    "@pes/engine": "*",
+    "argon2": "^0.41.1",
+    "connect-pg-simple": "^10.0.0",
+    "express": "^5.0.1",
+    "express-rate-limit": "^7.4.0",
+    "express-session": "^1.18.1",
+    "helmet": "^8.0.0",
+    "pg": "^8.13.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/express-session": "^1.18.0",
+    "@types/node": "^24.0.0",
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.9.3"
+  }
+}
