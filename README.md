@@ -74,7 +74,7 @@ npm run dev:web        # UI on :5173, proxying /api to :3000
 ## Tests
 
 ```bash
-npm test               # engine 39, server 27, web 8
+npm test               # engine 39, server 43, web 27
 ```
 
 > **The server tests call `DROP SCHEMA`.** They run only against
@@ -214,8 +214,12 @@ simply does not spin down.
   they depend on.
 - **`npm run seed` overwrites contract #1's figures** with the workbook values.
   Avoid it once real contracts are in the database, or use `--rates-only`.
-- **There is no password-change screen yet.** Passwords are set when an account
-  is created.
+- **Change your password under "Your account"**, linked from the contracts list
+  and from every contract's sidebar. It asks for the current password, and on
+  success signs the account out of every other device.
+- **There is no forgotten-password recovery.** Nothing here sends email, so an
+  account locked out of its password has to be reset directly in the database:
+  hash a new one with argon2id and `UPDATE users SET password_hash = ...`.
 - **Sign-up is open to anyone who can reach the site.** Contracts are walled off
   per account, so a stranger who registers sees an empty list and cannot read or
   delete your bills — but they can still create their own, and the rates chart

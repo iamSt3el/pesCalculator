@@ -36,7 +36,10 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
           <h1 className="title">Price Escalation</h1>
           <p className="subtitle">Clause-45 billing</p>
         </div>
-        <button className="ghost" onClick={onSignOut}>Sign out</button>
+        <div className="row">
+          <Link to="/profile" className="ghost no-print">Your account</Link>
+          <button className="ghost" onClick={onSignOut}>Sign out</button>
+        </div>
       </div>
 
       {error && <p className="notice">{error}</p>}

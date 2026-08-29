@@ -200,6 +200,14 @@ button:hover { filter: brightness(1.1); }
 button:disabled { opacity: 0.5; cursor: default; filter: none; }
 button.ghost { background: var(--surface); color: var(--ink); border-color: var(--rule-strong); }
 button.ghost:hover { background: var(--paper); filter: none; border-color: var(--ink-faint); }
+/* A link that sits in a header row beside real buttons and must match them. */
+a.ghost {
+  font: inherit; font-size: 14px; font-weight: 500;
+  padding: 7px 15px; text-decoration: none;
+  border: 1px solid var(--rule-strong); border-radius: 6px;
+  background: var(--surface); color: var(--ink);
+}
+a.ghost:hover { background: var(--paper); border-color: var(--ink-faint); }
 button.danger { background: var(--surface); color: var(--recovery); border-color: var(--rule); }
 button.small { padding: 4px 10px; font-size: 13px; }
 

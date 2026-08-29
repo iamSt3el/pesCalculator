@@ -4,6 +4,7 @@ import { api, type SessionUser } from './api.ts';
 import { ContractLayout } from './ContractLayout.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { ContractsPage } from './pages/ContractsPage.tsx';
+import { ProfilePage } from './pages/ProfilePage.tsx';
 import { MainDataPage } from './pages/MainDataPage.tsx';
 import { RatesChartPage } from './pages/RatesChartPage.tsx';
 import { IndexAveragePage } from './pages/IndexAveragePage.tsx';
@@ -32,6 +33,7 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<ContractsPage onSignOut={signOut} />} />
+        <Route path="/profile" element={<ProfilePage onSignOut={signOut} />} />
         <Route path="/c/:id" element={<ContractLayout onSignOut={signOut} />}>
           <Route index element={<MainDataPage />} />
           <Route path="rates" element={<RatesChartPage />} />

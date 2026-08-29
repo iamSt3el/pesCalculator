@@ -29,6 +29,9 @@ export const api = {
   login: (email: string, password: string) => send<SessionUser>('/api/auth/login', 'POST', { email, password }),
   logout: () => call<void>('/api/auth/logout', { method: 'POST' }),
   createUser: (email: string, password: string) => send<SessionUser>('/api/users', 'POST', { email, password }),
+  profile: () => call<Profile>('/api/users/me'),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    send<void>('/api/users/me/password', 'POST', { currentPassword, newPassword }),
 
   listRates: () => call<RateRow[]>('/api/rates'),
   putRates: (rows: RateRow[]) => send<{ written: number; rates: RateRow[] }>('/api/rates', 'PUT', rows),
@@ -50,6 +53,8 @@ export const api = {
 /* ---- wire types ---------------------------------------------------------- */
 
 export interface SessionUser { id: number; email: string; role: 'admin' | 'user' }
+
+export interface Profile extends SessionUser { createdAt: string; contractCount: number }
 
 export type ComponentKey = 'labour' | 'material' | 'cement' | 'steel' | 'pol' | 'bitumen';
 export type BaseRule = 'quarter_average' | 'bid_month' | 'offset_month';
