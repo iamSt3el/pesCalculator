@@ -162,7 +162,14 @@ table.grid tfoot td {
 }
 .scroller { overflow: auto; max-height: 70vh; }
 .scroller--short { max-height: none; overflow-x: auto; }
-th.r, td.r { text-align: right; }
+/**
+ * These have to name the table to win. `table.grid td` is specificity (0,1,2)
+ * and sets text-align:left; a bare `td.r` is (0,1,1) and `.num` is (0,1,0), so
+ * both lose to it and silently do nothing. Only an inline style used to beat
+ * the base rule, which is why the numeric columns once carried one.
+ */
+table.grid th.r, table.grid td.r,
+table.grid th.num, table.grid td.num { text-align: right; }
 
 /* ---- controls ------------------------------------------------------------ */
 input, select, textarea {
@@ -350,7 +357,7 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
 @media (prefers-reduced-motion: reduce) { .settled { animation: none; } }
 
 /* ---- loading ------------------------------------------------------------- */
-.loading-center { display: grid; place-items: center; min-height: 40vh; }
+.loading-center { display: grid; place-items: center; min-height: 60vh; }
 /* Boot, before there is any chrome to sit inside. */
 .loading-center--page { min-height: 100vh; }
 .spinner {

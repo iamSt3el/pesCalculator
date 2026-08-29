@@ -45,7 +45,7 @@ export function ContractLayout({ onSignOut }: { onSignOut: () => void }) {
   useEffect(() => { void reload(); }, [reload]);
 
   if (error) return <main className="shell__main"><p className="notice">{error}</p></main>;
-  if (!bundle) return <main className="shell__main"><Spinner /></main>;
+  if (!bundle) return <Spinner page />;
 
   const readiness = computeReadiness(bundle, rates, calculation);
   const context: ContractContext = { bundle, rates, calculation, reload, setBundle };
