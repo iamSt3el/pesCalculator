@@ -5,6 +5,10 @@
   --ink-muted: #5A6579;
   --ink-faint: #8B94A3;
   --rule: #E3E8EF;
+  /* The zebra stripe, flattened against --surface. Opaque on purpose: the
+     first column goes sticky on a narrow screen, and a translucent stripe
+     would let the cells scrolling beneath it show through. */
+  --stripe: #FAFAFB;
   --rule-strong: #C8D0DC;
   --stamp: #4338CA;
   --stamp-wash: #EEEDFB;
@@ -100,6 +104,9 @@ a { color: var(--stamp); text-underline-offset: 2px; }
 }
 .rail-total__note { font-size: 11px; color: var(--ink-muted); margin-top: 3px; }
 .rail-total--pending { background: var(--surface); }
+
+/* Account links, pinned to the bottom of the rail on a wide screen. */
+.rail-foot { display: grid; gap: 6px; margin-top: auto; }
 .rail-total--pending .rail-total__label,
 .rail-total--pending .rail-total__value { color: var(--ink-faint); }
 
@@ -146,7 +153,8 @@ table.grid thead th {
   color: var(--ink-faint); white-space: nowrap;
 }
 table.grid tbody td { border-bottom: 1px solid var(--rule); }
-table.grid tbody tr:nth-child(even) { background: rgba(15, 23, 42, 0.022); }
+table.grid tbody tr { background: var(--surface); }
+table.grid tbody tr:nth-child(even) { background: var(--stripe); }
 table.grid tbody tr:hover { background: var(--stamp-wash); }
 table.grid tfoot td {
   font-weight: 600; border-top: 1px solid var(--rule-strong);
@@ -173,10 +181,20 @@ input:focus, select:focus, textarea:focus { border-color: var(--stamp); }
  * Ledger cell: inside a grid the box chrome is pure noise, so the border only
  * appears when the cell is under the cursor or being edited.
  */
+/**
+ * A cell holding an editable control gives up its own padding, and the control
+ * restates the same 12px inset itself (11px + the 1px transparent border). The
+ * digits then land on exactly the edge a plain text cell's do. Without this the
+ * td's 12px and the control's own padding stack, and every editable column sits
+ * 6px right of its own heading and total.
+ */
+table.grid td:has(> input.cell),
+table.grid td:has(> select.cell) { padding: 0; }
+
 input.cell {
   font-family: var(--mono); font-variant-numeric: tabular-nums;
   text-align: right;
-  width: 100%; padding: 4px 6px;
+  width: 100%; padding: 4px 11px;
   border: 1px solid transparent; border-radius: 4px;
   background: transparent;
 }
@@ -233,8 +251,10 @@ button.erase:hover { filter: none; color: var(--recovery); border-color: var(--r
   clip-path: inset(50%); white-space: nowrap;
 }
 
+/* Inset like input.cell, so the chosen option starts on the same left edge as
+   its column heading. The right stays wide for the chevron. */
 select.cell {
-  font-size: 13px; padding: 4px 22px 4px 6px; width: 100%;
+  font-size: 13px; padding: 4px 22px 4px 11px; width: 100%;
   border: 1px solid transparent; border-radius: 4px; background: transparent;
 }
 select.cell:hover { border-color: var(--rule-strong); background: var(--surface); }
@@ -329,14 +349,72 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
 .settled { animation: settle 400ms ease-out; border-radius: 3px; }
 @media (prefers-reduced-motion: reduce) { .settled { animation: none; } }
 
+/* ---- loading ------------------------------------------------------------- */
+.loading-center { display: grid; place-items: center; min-height: 40vh; }
+/* Boot, before there is any chrome to sit inside. */
+.loading-center--page { min-height: 100vh; }
+.spinner {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid var(--rule);
+  border-top-color: var(--stamp);
+  animation: spin 750ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+/* A still ring reads as a broken image, so under reduced motion the circle
+   breathes instead of turning. */
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: pulse 1.4s ease-in-out infinite; }
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
 /* ---- responsive ---------------------------------------------------------- */
 @media (max-width: 820px) {
   .shell { grid-template-columns: 1fr; }
-  .shell__nav { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--rule); }
-  .stage-rail { flex-direction: row; overflow-x: auto; }
-  .stage { white-space: nowrap; }
-  .shell__main { padding: 20px 16px 60px; }
+  .shell__nav {
+    position: static; height: auto;
+    border-right: none; border-bottom: 1px solid var(--rule);
+    padding: 12px 14px; gap: 12px;
+  }
+  .shell__main { padding: 20px 14px 60px; }
   .report .paper { padding: 20px; }
+
+  /* The rail's stacked blocks collapse into one band, so the reader reaches
+     the content without scrolling past a full menu first. The payable stays
+     on screen, which is the whole reason it lives in the rail. */
+  .rail-sub { display: none; }
+  .rail-total {
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px;
+    padding: 8px 10px;
+  }
+  .rail-total__value { font-size: 18px; margin-top: 0; }
+  .rail-total__note { margin: 0 0 0 auto; }
+
+  .stage-rail { flex-direction: row; overflow-x: auto; gap: 4px; }
+  .stage { white-space: nowrap; }
+  .rail-foot { grid-auto-flow: column; justify-content: start; align-items: center; gap: 16px; margin-top: 0; }
+
+  /* Hold the row's label still while the figures scroll under it. Each sticky
+     cell needs an opaque background of its own, or the columns sliding beneath
+     show straight through it -- the body takes the row's colour, while the
+     head and foot keep the one they already paint. */
+  table.grid tbody td:first-child {
+    position: sticky; left: 0; z-index: 1; background: inherit;
+  }
+  table.grid thead th:first-child { position: sticky; left: 0; z-index: 3; }
+  table.grid tfoot td:first-child {
+    position: sticky; left: 0; z-index: 1; background: var(--surface);
+  }
+
+  /* Under 16px iOS zooms the page when an input takes focus, and on a grid
+     this wide that loses the reader's place entirely. */
+  input, select, textarea { font-size: 16px; }
+  table.grid th, table.grid td { height: 42px; }
+}
+
+@media (max-width: 480px) {
+  .title { font-size: 24px; }
+  .grid-fields { grid-template-columns: 1fr; }
+  .shell__main { padding: 16px 12px 48px; }
 }
 
 /* ---- disclosure ---------------------------------------------------------- */

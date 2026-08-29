@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, type ContractSummary } from '../api.ts';
+import { Spinner } from '../components/Spinner.tsx';
 
 export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
   const [rows, setRows] = useState<ContractSummary[] | null>(null);
@@ -55,7 +56,7 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
         </button>
       </form>
 
-      {rows === null ? <p className="hint">Loading…</p>
+      {rows === null ? <Spinner />
         : rows.length === 0 ? (
           <div className="panel">
             <p style={{ margin: 0 }}>No contracts yet. Add an agreement number above to start one.</p>

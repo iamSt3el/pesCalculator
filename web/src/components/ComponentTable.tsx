@@ -41,10 +41,10 @@ export function ComponentTable() {
           <thead>
             <tr>
               <th>Component</th>
-              <th style={{ width: 110 }}>Share %</th>
-              <th style={{ width: 90 }}>Factor</th>
+              <th className="r" style={{ width: 110 }}>Share %</th>
+              <th className="r" style={{ width: 90 }}>Factor</th>
               <th style={{ width: 230 }}>Base index from</th>
-              <th style={{ width: 130 }}>Override</th>
+              <th className="r" style={{ width: 130 }}>Override</th>
             </tr>
           </thead>
           <tbody>

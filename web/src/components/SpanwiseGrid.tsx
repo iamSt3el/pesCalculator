@@ -80,7 +80,7 @@ export function SpanwiseGrid() {
         <div className="panel panel--flush scroller--short" style={{ marginBottom: 12 }}>
           <table className="grid">
             <thead>
-              <tr><th>Span</th><th>Days</th><th>Value</th><th>Per day</th><th>Ends</th></tr>
+              <tr><th>Span</th><th className="r">Days</th><th className="r">Value</th><th className="r">Per day</th><th>Ends</th></tr>
             </thead>
             <tbody>
               {[0, 1, 2, 3].map((i) => (
@@ -102,11 +102,11 @@ export function SpanwiseGrid() {
           <thead>
             <tr>
               <th>Month</th>
-              <th style={{ width: 86 }}>Span 1</th>
-              <th style={{ width: 86 }}>Span 2</th>
-              <th style={{ width: 86 }}>Span 3</th>
-              <th style={{ width: 86 }}>Span 4</th>
-              <th style={{ textAlign: 'right' }}>Amount</th>
+              <th className="r" style={{ width: 86 }}>Span 1</th>
+              <th className="r" style={{ width: 86 }}>Span 2</th>
+              <th className="r" style={{ width: 86 }}>Span 3</th>
+              <th className="r" style={{ width: 86 }}>Span 4</th>
+              <th className="r">Amount</th>
             </tr>
           </thead>
           <tbody>
@@ -123,7 +123,7 @@ export function SpanwiseGrid() {
                              onChange={(e) => setDay(month, i, Number(e.target.value))} />
                     </td>
                   ))}
-                  <td style={{ textAlign: 'right' }}><MonthAmount value={amountFor(month)} /></td>
+                  <td className="r"><MonthAmount value={amountFor(month)} /></td>
                 </tr>
               );
             })}

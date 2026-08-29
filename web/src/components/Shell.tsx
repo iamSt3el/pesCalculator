@@ -74,7 +74,7 @@ export function Shell({ readiness, agreementNo, contractor, calculation, onSignO
           ))}
         </div>
 
-        <div className="stack no-print" style={{ marginTop: 'auto', gap: 6 }}>
+        <div className="rail-foot no-print">
           <NavLink to="/profile" className="rail-back">Your account</NavLink>
           <button className="ghost small" onClick={onSignOut}>Sign out</button>
         </div>

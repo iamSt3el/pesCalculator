@@ -45,16 +45,16 @@ export function ScheduleTable() {
           <thead>
             <tr>
               <th>Month</th>
-              <th style={{ textAlign: 'right' }}>Computed</th>
-              <th style={{ width: 150, textAlign: 'right' }}>Adjustment</th>
-              <th style={{ textAlign: 'right' }}>Payment</th>
+              <th className="r">Computed</th>
+              <th className="r" style={{ width: 150 }}>Adjustment</th>
+              <th className="r">Payment</th>
             </tr>
           </thead>
           <tbody>
             {calculation.schedule.rows.map((r) => (
               <tr key={r.month}>
                 <td style={{ whiteSpace: 'nowrap' }}>{formatMonth(r.month)}</td>
-                <td style={{ textAlign: 'right' }}><Computed value={r.computed} /></td>
+                <td className="r"><Computed value={r.computed} /></td>
                 <td>
                   <input className="cell" type="number" step="1"
                          value={adjustmentFor(r.month) || ''} placeholder="0"

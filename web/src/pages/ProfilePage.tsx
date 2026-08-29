@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError, type Profile } from '../api.ts';
 import { validatePasswordChange, MIN_PASSWORD } from '../password.ts';
+import { Spinner } from '../components/Spinner.tsx';
 
 const ROLE_LABEL: Record<Profile['role'], string> = {
   admin: 'Administrator',
@@ -65,7 +66,7 @@ export function ProfilePage({ onSignOut }: { onSignOut: () => void }) {
       {loadError && <p className="notice">{loadError}</p>}
 
       <div className="section-head"><h2>Details</h2></div>
-      {profile === null && !loadError ? <p className="hint">Loading…</p> : profile && (
+      {profile === null && !loadError ? <Spinner /> : profile && (
         <div className="panel grid-fields">
           <div className="stack">
             <span className="eyebrow" style={{ margin: 0 }}>Email</span>

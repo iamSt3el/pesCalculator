@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Outlet, useOutletContext, useParams } from 'react-router-dom';
 import { api, type Calculation, type ContractBundle, type RateRow } from './api.ts';
 import { Shell } from './components/Shell.tsx';
+import { Spinner } from './components/Spinner.tsx';
 import { computeReadiness } from './readiness.ts';
 
 export interface ContractContext {
@@ -44,7 +45,7 @@ export function ContractLayout({ onSignOut }: { onSignOut: () => void }) {
   useEffect(() => { void reload(); }, [reload]);
 
   if (error) return <main className="shell__main"><p className="notice">{error}</p></main>;
-  if (!bundle) return <main className="shell__main"><p className="hint">Loading…</p></main>;
+  if (!bundle) return <main className="shell__main"><Spinner /></main>;
 
   const readiness = computeReadiness(bundle, rates, calculation);
   const context: ContractContext = { bundle, rates, calculation, reload, setBundle };

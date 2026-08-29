@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { api, type SessionUser } from './api.ts';
 import { ContractLayout } from './ContractLayout.tsx';
+import { Spinner } from './components/Spinner.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { ContractsPage } from './pages/ContractsPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
@@ -26,7 +27,7 @@ export function App() {
     void api.logout().finally(() => setUser(null));
   }, []);
 
-  if (!checked) return <main style={{ padding: 24 }} className="hint">Loading…</main>;
+  if (!checked) return <Spinner page />;
   if (!user) return <LoginPage onSignedIn={refresh} />;
 
   return (
