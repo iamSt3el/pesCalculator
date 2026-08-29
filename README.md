@@ -157,43 +157,50 @@ administrator and adopts every contract already in the database.
 ## Keeping the free instance awake
 
 Render spins a free service down after about 15 minutes of inactivity, and the
-next visitor waits 50 seconds or more for it to boot. `.github/workflows/keep-warm.yml`
-pings `/api/health` every 5 minutes during working hours so the service is up
-when anyone would use it, and asleep overnight so the free instance-hours are
-not spent idling.
+next visitor waits 50 seconds or more for it to boot. An external pinger hits
+`/api/health` every 5 minutes during working hours, so the service is up when
+anyone would use it and asleep overnight, which keeps the instance-hours well
+inside the free allowance.
 
-**Setup** — one variable, no code change:
+**Setup** — [cron-job.org](https://cron-job.org), free, and nothing in this repo:
 
-> Repo → Settings → Secrets and variables → Actions → **Variables** → New
-> Name `RENDER_URL`, value `https://<your-service>.onrender.com`
+> URL       `https://pes-calculator.onrender.com/api/health`
+> Schedule  Custom → `*/5 8-20 * * 1-6`
+> Timezone  Asia/Kolkata
+> Notify    on failed execution, after 2 failures
 
-Then run it once by hand to check: Actions → Keep warm → Run workflow.
+Turn the failure notification on. A pinger that dies quietly is the exact
+problem it exists to prevent.
 
 **The budget it is designed around:**
 
 | | |
 |---|---|
-| Awake window | 08:30 – 20:25 IST, Monday to Saturday |
-| Render instance-hours | ~312/month, against a free allowance of 750 |
+| Awake window | 08:00 – 20:59 IST, Monday to Saturday |
+| Render instance-hours | ~346/month, against a free allowance of 750 |
 | Ping interval | 5 minutes — two runs can be skipped and the service still stays awake |
-| GitHub Actions minutes | free and unlimited **while this repo is public** |
 
-**Two caveats worth knowing:**
+**Why not GitHub Actions.** This repo used to carry
+`.github/workflows/keep-warm.yml` doing the same job on a `*/5 3-14 * * 1-6`
+schedule. It was removed on 2026-08-29, for three reasons worth remembering
+before anyone adds it back:
 
-- **If you make the repo private**, this workflow costs ~3,700 Actions minutes a
-  month against a 2,000-minute free allowance. Switch to the external pinger
-  below, or widen the interval to 10 minutes and narrow the window.
-- **GitHub disables scheduled workflows after 60 days without a commit.** If the
-  project goes quiet, the pings stop silently. Any commit re-enables them.
+- **It never ran.** In 18 hours on the default branch it fired zero times, across
+  roughly 60 eligible slots. GitHub throttles high-frequency `schedule` triggers
+  hard on new, low-activity repositories.
+- **It reported success while doing nothing.** With the `RENDER_URL` variable
+  unset it took its `exit 0` branch and pinged nothing, so the Actions tab looked
+  green the whole time it was broken.
+- **Scheduled workflows are disabled after 60 days without a commit**, and if the
+  repo were ever made private the job would cost ~3,700 Actions minutes a month
+  against a 2,000-minute allowance.
 
-**A more reliable alternative:** point [cron-job.org](https://cron-job.org) or
-UptimeRobot at `https://<your-service>.onrender.com/api/health` every 5 minutes
-with the same time window. Both are free, neither is subject to GitHub's
-scheduling delays or the 60-day rule, and neither spends Actions minutes. If you
-use one, delete the workflow so you are not doing the job twice.
+**Avoid UptimeRobot for this.** Its free plan has prohibited commercial use since
+December 2024, and it cannot restrict checks to a time window — pinging around
+the clock would spend ~744 of the 750 free instance-hours.
 
-Neither approach is a substitute for Render's paid Starter plan (~$7/month),
-which simply does not spin down.
+No pinger is a substitute for Render's paid Starter plan (~$7/month), which
+simply does not spin down.
 
 ## Notes
 
