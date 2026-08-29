@@ -26,7 +26,7 @@ test.before(async () => {
     { month: '2024-03', labour: 125.3, material: 99.4, cement: 96.1, steel: 86.3, pol: 89.3, bitumenG: 38312, bitumenH: null },
   ]);
 
-  const c = await createContract('168 of 2023-24');
+  const c = await createContract('168 of 2023-24', null);
   contractId = c.id;
   await updateContract(contractId, {
     contractor: 'M/s. Pradeep Kumar Contractor',

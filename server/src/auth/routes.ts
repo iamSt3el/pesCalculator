@@ -1,9 +1,9 @@
-import { Router, type Request, type Response } from 'express';
+import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { pool } from '../db.ts';
 import { hashPassword, verifyPassword } from './password.ts';
-import { requireAdmin, type SessionUser } from './middleware.ts';
+import { type SessionUser } from './middleware.ts';
 
 const credentials = z.object({
   email: z.string().email().max(320),
@@ -49,40 +49,51 @@ authRouter.get('/me', (req, res) => {
   res.json(req.session.user);
 });
 
-async function createUser(req: Request, res: Response, role: 'admin' | 'user'): Promise<void> {
+export const usersRouter: Router = Router();
+
+// Sign-up is open and unauthenticated, and hashing a password is deliberately
+// expensive, so cap how fast one address can mint accounts.
+const signupLimiter = rateLimit({ windowMs: 60 * 60_000, limit: 10, standardHeaders: true });
+
+/**
+ * Open sign-up: anyone may create an account. The first one still becomes the
+ * administrator, so the role column keeps its meaning.
+ *
+ * This is only safe because contracts are owner-scoped -- a new account starts
+ * with an empty list and cannot read or delete anybody else's bills. See the
+ * ownership guard in routes/contracts.ts.
+ */
+usersRouter.post('/', signupLimiter, async (req, res, next) => {
   const parsed = credentials.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: 'Email must be valid and the password at least 12 characters' });
     return;
   }
-  const hash = await hashPassword(parsed.data.password);
+
   try {
+    const { rows: counted } = await pool.query<{ count: string }>('SELECT count(*)::text FROM users');
+    const isFirst = counted[0]!.count === '0';
+    const hash = await hashPassword(parsed.data.password);
+
     const { rows } = await pool.query<SessionUser>(
       'INSERT INTO users (email, password_hash, role) VALUES ($1, $2, $3) RETURNING id, email, role',
-      [parsed.data.email, hash, role],
+      [parsed.data.email, hash, isFirst ? 'admin' : 'user'],
     );
-    res.status(201).json(rows[0]);
+    const user = rows[0]!;
+
+    // The founding admin adopts every contract that predates sign-up: seeded
+    // rows, and anything migrated while the users table was still empty.
+    // Without this those rows have no owner and nobody could ever open them.
+    if (isFirst) {
+      await pool.query('UPDATE contracts SET user_id = $1 WHERE user_id IS NULL', [user.id]);
+    }
+
+    res.status(201).json(user);
   } catch (err) {
     if ((err as { code?: string }).code === '23505') {
       res.status(409).json({ error: 'That email address already has an account' });
       return;
     }
-    throw err;
-  }
-}
-
-export const usersRouter: Router = Router();
-
-/**
- * No open sign-up: the very first account bootstraps an admin, and after that
- * only an admin may create accounts.
- */
-usersRouter.post('/', async (req, res, next) => {
-  try {
-    const { rows } = await pool.query<{ count: string }>('SELECT count(*)::text FROM users');
-    if (rows[0]!.count === '0') { await createUser(req, res, 'admin'); return; }
-    requireAdmin(req, res, () => { void createUser(req, res, 'user').catch(next); });
-  } catch (err) {
     next(err);
   }
 });

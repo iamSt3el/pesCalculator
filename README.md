@@ -46,8 +46,12 @@ npm run seed                  # loads the rates chart and Agreement 168
 npm start                     # http://localhost:3000
 ```
 
-Open the site and create the first account — it becomes the administrator.
-After that only an administrator can add accounts; there is no open sign-up.
+Open the site and create an account. Sign-up is open — anyone who can reach
+the site can register — and the first account created becomes the administrator.
+
+Each account sees only the contracts it created. The founding admin also adopts
+any contract that predates sign-up, which is how the seeded Agreement 168 ends
+up in the first account's list.
 
 **Postgres in Docker**, if you don't already have one:
 
@@ -144,8 +148,9 @@ creating a sample contract. Drop `--rates-only` if you also want Agreement
 
 ### 7. Create the first account
 
-Open the deployed URL and create an account. The first one becomes the
-administrator; every later account has to be created by an administrator.
+Open the deployed URL and create an account. **Create it immediately after
+deploying:** sign-up is open, and the first account to register becomes the
+administrator and adopts every contract already in the database.
 
 ---
 
@@ -204,3 +209,10 @@ which simply does not spin down.
   Avoid it once real contracts are in the database, or use `--rates-only`.
 - **There is no password-change screen yet.** Passwords are set when an account
   is created.
+- **Sign-up is open to anyone who can reach the site.** Contracts are walled off
+  per account, so a stranger who registers sees an empty list and cannot read or
+  delete your bills — but they can still create their own, and the rates chart
+  is shared and editable by every signed-in account.
+- **Deleting an account that owns contracts is refused** (`ON DELETE RESTRICT`),
+  so removing a user cannot silently destroy billing data. Reassign its
+  contracts first: `UPDATE contracts SET user_id = <new owner> WHERE user_id = <old>`.

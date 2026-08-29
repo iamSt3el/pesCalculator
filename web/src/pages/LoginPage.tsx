@@ -47,9 +47,9 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
       </form>
 
       <p className="hint" style={{ marginTop: 18 }}>
-        {creating ? 'Already have an account? ' : 'Setting this up for the first time? '}
+        {creating ? 'Already have an account? ' : 'Need an account? '}
         <a href="#" onClick={(e) => { e.preventDefault(); setCreating(!creating); setError(null); }}>
-          {creating ? 'Sign in instead' : 'Create the first account'}
+          {creating ? 'Sign in instead' : 'Create an account'}
         </a>
       </p>
     </main>

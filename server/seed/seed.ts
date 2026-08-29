@@ -36,7 +36,9 @@ export async function seedDatabase(
   const existing = await pool.query<{ id: number }>(
     'SELECT id FROM contracts WHERE agreement_no = $1', [agreementNo],
   );
-  const contract = existing.rows[0] ?? (await createContract(agreementNo));
+  // Unowned: the seeder runs before anyone has signed up, so the first account
+  // created adopts this contract.
+  const contract = existing.rows[0] ?? (await createContract(agreementNo, null));
   const contractId = contract.id;
 
   await updateContract(contractId, {

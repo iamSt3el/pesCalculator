@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '../auth/middleware.ts';
 import { calculationRouter } from './calculation.ts';
 import {
-  createContract, deleteContract, getContract, listContracts,
+  contractOwnerId, createContract, deleteContract, getContract, listContracts,
   replaceAdjustments, replaceComponents, replaceProgress, updateContract,
 } from '../repo/contracts.ts';
 
@@ -44,12 +44,30 @@ const parseId = (raw: string | undefined): number | null => {
   return Number.isInteger(n) && n > 0 ? n : null;
 };
 
-contractsRouter.get('/', async (_req, res) => { res.json(await listContracts()); });
+contractsRouter.get('/', async (req, res) => {
+  res.json(await listContracts(req.session.user!.id));
+});
 
 contractsRouter.post('/', async (req, res) => {
   const parsed = z.object({ agreementNo: z.string().min(1).max(200) }).safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: 'An agreement number is required' }); return; }
-  res.status(201).json(await createContract(parsed.data.agreementNo));
+  res.status(201).json(await createContract(parsed.data.agreementNo, req.session.user!.id));
+});
+
+/**
+ * One chokepoint for every /:id path below, the calculation router included:
+ * a contract you do not own is reported as missing, not as forbidden, so the
+ * endpoint cannot be used to probe which ids other accounts hold.
+ */
+contractsRouter.use('/:id', async (req, res, next) => {
+  const contractId = parseId(req.params.id);
+  if (contractId === null) { res.status(400).json({ error: 'Invalid contract id' }); return; }
+  try {
+    if (await contractOwnerId(contractId) !== req.session.user!.id) {
+      res.status(404).json({ error: 'No such contract' }); return;
+    }
+    next();
+  } catch (err) { next(err); }
 });
 
 // Mounted before /:id so the calculation path is matched by its own router.

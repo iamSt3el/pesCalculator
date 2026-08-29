@@ -46,20 +46,35 @@ function defaultComponent(key: ComponentConfig['key']): ComponentConfig {
   return { key, percent: 0, factor: 0.75, baseRule: 'quarter_average', baseOverride: null };
 }
 
-export async function listContracts(): Promise<Array<{ id: number; agreementNo: string; contractor: string; workName: string }>> {
+/** Only the owner's contracts. An unowned row belongs to nobody and is hidden. */
+export async function listContracts(ownerId: number): Promise<Array<{ id: number; agreementNo: string; contractor: string; workName: string }>> {
   const { rows } = await pool.query<{ id: number; agreement_no: string; contractor: string; work_name: string }>(
-    'SELECT id, agreement_no, contractor, work_name FROM contracts ORDER BY id DESC',
+    'SELECT id, agreement_no, contractor, work_name FROM contracts WHERE user_id = $1 ORDER BY id DESC',
+    [ownerId],
   );
   return rows.map((r) => ({
     id: r.id, agreementNo: r.agreement_no, contractor: r.contractor, workName: r.work_name,
   }));
 }
 
-export async function createContract(agreementNo: string): Promise<ContractRecord> {
+/**
+ * Returns the owner's id, or null when the contract does not exist. A contract
+ * that exists but is unowned reports null too, so it stays unreachable until
+ * an account adopts it.
+ */
+export async function contractOwnerId(id: number): Promise<number | null> {
+  const { rows } = await pool.query<{ user_id: number | null }>(
+    'SELECT user_id FROM contracts WHERE id = $1', [id],
+  );
+  return rows[0]?.user_id ?? null;
+}
+
+/** ownerId is null only for the seeder, whose rows the first account adopts. */
+export async function createContract(agreementNo: string, ownerId: number | null): Promise<ContractRecord> {
   return withTransaction(async (client) => {
     const { rows } = await client.query<ContractDbRow>(
-      `INSERT INTO contracts (agreement_no) VALUES ($1) RETURNING ${CONTRACT_COLUMNS}`,
-      [agreementNo],
+      `INSERT INTO contracts (agreement_no, user_id) VALUES ($1, $2) RETURNING ${CONTRACT_COLUMNS}`,
+      [agreementNo, ownerId],
     );
     const record = toRecord(rows[0]!);
     for (const key of COMPONENT_KEYS) {

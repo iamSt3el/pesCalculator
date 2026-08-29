@@ -7,7 +7,7 @@ test('runMigrations creates the schema and is idempotent', async () => {
   await pool.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
 
   const first = await runMigrations(pool);
-  assert.deepEqual(first, ['001_init.sql']);
+  assert.deepEqual(first, ['001_init.sql', '002_contract_owner.sql']);
 
   const { rows } = await pool.query(
     `SELECT table_name FROM information_schema.tables
@@ -17,6 +17,12 @@ test('runMigrations creates the schema and is idempotent', async () => {
   for (const t of ['components', 'contracts', 'payments', 'progress', 'rates', 'schema_migrations', 'session', 'users']) {
     assert.ok(tables.includes(t), `missing table ${t}`);
   }
+
+  const owner = await pool.query(
+    `SELECT 1 FROM information_schema.columns
+      WHERE table_name = 'contracts' AND column_name = 'user_id'`,
+  );
+  assert.equal(owner.rowCount, 1, 'contracts should carry its owner');
 
   const second = await runMigrations(pool);
   assert.deepEqual(second, [], 'a second run should apply nothing');
