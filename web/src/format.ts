@@ -20,9 +20,14 @@ export function formatIndex(n: number | null | undefined, dp = 4): string {
  * Five of the six components are dimensionless indices, written to `dp`.
  * Bitumen VG-10 is not an index at all — it is a rupee rate per tonne, so it is
  * written as money: grouped the Indian way, to the paise.
+ *
+ * Two decimals throughout. The engine averages a quarter as an exact `sum / 3`
+ * and never rounds it, so every printed index is an approximation of a figure
+ * the calculation holds in full — four decimals were no more the true mean
+ * than two are, only longer.
  */
 export function formatComponentIndex(
-  n: number | null | undefined, key: string, dp = 4,
+  n: number | null | undefined, key: string, dp = 2,
 ): string {
   if (n === null || n === undefined) return '—';
   return key === 'bitumen' ? formatRupees(n) : formatIndex(n, dp);

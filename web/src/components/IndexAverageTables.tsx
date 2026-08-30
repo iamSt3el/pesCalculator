@@ -47,7 +47,7 @@ export function IndexAverageTables() {
                   <td>{formatMonth(m)}</td>
                   {COMPONENT_KEYS.map((k) => (
                     <td key={k} className="num">
-                      {formatComponentIndex(rateFor(m, k), k, 2)}
+                      {formatComponentIndex(rateFor(m, k), k)}
                     </td>
                   ))}
                 </tr>

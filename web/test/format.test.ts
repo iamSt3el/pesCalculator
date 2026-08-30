@@ -25,10 +25,15 @@ test('formatRupees still takes an explicit precision', () => {
 });
 
 test('formatComponentIndex writes bitumen as money and the rest as indices', () => {
-  assert.equal(formatComponentIndex(39_809.4567, 'bitumen'), '39,809.46');
-  assert.equal(formatComponentIndex(92.766666666, 'steel'), '92.7667');
-  assert.equal(formatComponentIndex(99.1, 'labour', 2), '99.10');
+  assert.equal(formatComponentIndex(39_808.666666, 'bitumen'), '39,808.67');
+  assert.equal(formatComponentIndex(92.766666666, 'steel'), '92.77');
+  assert.equal(formatComponentIndex(99.1, 'labour'), '99.10');
+  assert.equal(formatComponentIndex(126.2, 'labour'), '126.20');
   assert.equal(formatComponentIndex(null, 'bitumen'), '—');
+});
+
+test('formatComponentIndex still takes an explicit precision', () => {
+  assert.equal(formatComponentIndex(92.766666666, 'steel', 4), '92.7667');
 });
 
 test('formatIndex shows a fixed number of decimals and an em dash for nothing', () => {
