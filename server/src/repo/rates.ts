@@ -19,11 +19,19 @@ export async function listRates(): Promise<RateRow[]> {
   return rows.map(toRateRow);
 }
 
-/** Upsert by month. Months are stored as the first day of the month. */
+/**
+ * Upsert by month. Months are stored as the first day of the month.
+ *
+ * A block pasted out of Excel can name the same month twice, and Postgres will
+ * not let one statement's ON CONFLICT touch a row a second time. Collapse
+ * duplicates first, keeping the last occurrence — the one the operator typed
+ * most recently — rather than rejecting the whole paste.
+ */
 export async function upsertRates(rows: RateRow[]): Promise<number> {
-  if (rows.length === 0) return 0;
+  const unique = [...new Map(rows.map((r) => [r.month, r])).values()];
+  if (unique.length === 0) return 0;
   const values: unknown[] = [];
-  const tuples = rows.map((r, i) => {
+  const tuples = unique.map((r, i) => {
     const o = i * 8;
     values.push(`${r.month}-01`, r.labour, r.material, r.cement, r.steel, r.pol, r.bitumenG, r.bitumenH);
     return `($${o + 1}::date, $${o + 2}, $${o + 3}, $${o + 4}, $${o + 5}, $${o + 6}, $${o + 7}, $${o + 8})`;

@@ -69,7 +69,12 @@ export function resolveBaseRates(
 ): { bases: Map<ComponentKey, ResolvedBase>; missing: Month[] } {
   const baseQuarter = baseQuarterOf(contract.bidDate);
   const bidMonth = monthOfDate(contract.bidDate);
-  const offsetMonth = monthOfDate(addDays(contract.bidDate, -contract.bitumenOffsetDays));
+  // Stepping back from a bid date that is not set yet gives an unrepresentable
+  // date, which used to throw. With no bid date there is no offset month, and
+  // the missing rate is reported like any other.
+  const offsetMonth = contract.bidDate
+    ? monthOfDate(addDays(contract.bidDate, -contract.bitumenOffsetDays))
+    : '';
 
   const bases = new Map<ComponentKey, ResolvedBase>();
   const missing = new Set<Month>();

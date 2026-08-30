@@ -33,6 +33,10 @@ export function ScheduleTable() {
     saver.schedule(next);
   };
 
+  // The engine owns the rule for what counts as drift — the schedule is allocated
+  // in whole rupees, so it cannot match an amount carrying paise exactly. Render
+  // its finding rather than recomputing a second, subtly different one here.
+  const drifted = calculation.problems.some((p) => p.code === 'schedule_drift');
   const drift = calculation.schedule.total - bundle.contract.workDoneAmount;
 
   return (
@@ -78,7 +82,7 @@ export function ScheduleTable() {
         </table>
       </div>
 
-      {drift !== 0 && (
+      {drifted && (
         <p className="notice">
           The schedule totals {formatRupees(calculation.schedule.total)}, but the work done amount is{' '}
           {formatRupees(bundle.contract.workDoneAmount)} — a difference of {formatRupees(drift)}.

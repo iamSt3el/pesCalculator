@@ -122,6 +122,15 @@ export async function getContract(id: number): Promise<ContractBundle | null> {
   };
 }
 
+/**
+ * An emptied date input means "not set", which the DATE columns hold as NULL.
+ * The text columns are NOT NULL, so an emptied one has to stay an empty string —
+ * coercing those to NULL made clearing any of them fail the whole save.
+ */
+const DATE_KEYS = new Set<keyof ContractInput>([
+  'bidDate', 'commencement', 'stipulatedCompletion', 'actualCompletion',
+]);
+
 export async function updateContract(id: number, patch: Partial<ContractInput>): Promise<void> {
   const columns: Record<keyof ContractInput, string> = {
     agreementNo: 'agreement_no', contractor: 'contractor', workName: 'work_name',
@@ -135,7 +144,7 @@ export async function updateContract(id: number, patch: Partial<ContractInput>):
   for (const [key, column] of Object.entries(columns) as Array<[keyof ContractInput, string]>) {
     if (!(key in patch)) continue;
     const value = patch[key];
-    values.push(value === '' ? null : value);
+    values.push(DATE_KEYS.has(key) && value === '' ? null : value);
     sets.push(`${column} = $${values.length}`);
   }
   if (sets.length === 0) return;

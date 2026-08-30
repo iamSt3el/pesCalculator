@@ -77,3 +77,20 @@ test('deleteRate removes one month and leaves the rest alone', async () => {
 test('deleting a month that is not there reports false rather than throwing', async () => {
   assert.equal(await deleteRate('1999-01'), false);
 });
+
+test('upsertRates keeps the last row when one month appears twice in a payload', async () => {
+  await upsertRates([
+    { month: '2031-03', labour: 100, material: null, cement: null, steel: null, pol: null, bitumenG: null, bitumenH: null },
+    { month: '2031-03', labour: 101, material: null, cement: null, steel: null, pol: null, bitumenG: null, bitumenH: null },
+  ]);
+  const rows = (await listRates()).filter((r) => r.month === '2031-03');
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]!.labour, 101);
+});
+
+test('a pasted block that repeats a month is written rather than rejected', async () => {
+  const { rows } = parsePastedRates('2031-04\t120\n2031-04\t121\n');
+  const written = await upsertRates(rows);
+  assert.equal(written, 1);
+  assert.equal((await listRates()).find((r) => r.month === '2031-04')!.labour, 121);
+});

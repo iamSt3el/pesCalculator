@@ -28,13 +28,24 @@ const componentsBody = z.array(z.object({
   baseOverride: z.number().nullable(),
 })).length(6);
 
-const progressBody = z.array(z.object({
+/**
+ * Both collections are keyed by month in the database, so a payload naming one
+ * twice cannot be stored. Refusing it here turns what was a 500 from the primary
+ * key into the 400 it always was.
+ */
+const monthsAreDistinct = <T extends { month: string }>(rows: T[]): boolean =>
+  new Set(rows.map((r) => r.month)).size === rows.length;
+
+const DUPLICATE_MONTH = 'Each month may appear only once';
+
+export const progressBody = z.array(z.object({
   month: monthString,
   spanDays: z.tuple([z.number().int().min(0), z.number().int().min(0),
                      z.number().int().min(0), z.number().int().min(0)]),
-}));
+})).refine(monthsAreDistinct, { message: DUPLICATE_MONTH });
 
-const adjustmentsBody = z.array(z.object({ month: monthString, adjustment: z.number() }));
+export const adjustmentsBody = z.array(z.object({ month: monthString, adjustment: z.number() }))
+  .refine(monthsAreDistinct, { message: DUPLICATE_MONTH });
 
 export const contractsRouter: Router = Router();
 contractsRouter.use(requireAuth);

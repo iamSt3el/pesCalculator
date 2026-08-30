@@ -63,6 +63,30 @@ test('payable is carried to the paise, so the bill subtracts exactly', () => {
   assert.equal(withPaise.payable, 72603.63);
 });
 
+test('a work done amount carrying paise reports no schedule drift', () => {
+  const r = calculate({
+    ...input, contract: { ...CONTRACT_168, workDoneAmount: 21_717_359.50 },
+  });
+  assert.equal(r.problems.find((p) => p.code === 'schedule_drift'), undefined);
+  // The monthly schedule is whole-rupee by design (spec 3.5), so it lands on
+  // the work done amount rounded, not on the paise.
+  assert.equal(r.schedule.total, 21_717_360);
+});
+
+test('a contract with no dates yet reports a problem instead of throwing', () => {
+  const r = calculate({
+    // A contract is created with every date empty, the bid date included.
+    ...input,
+    contract: { ...CONTRACT_168, bidDate: '', commencement: '', actualCompletion: '' },
+  });
+  assert.ok(r.problems.some((p) => p.code === 'invalid_period'),
+    'expected an invalid_period problem');
+  assert.equal(r.spans.totalDays, 0);
+  assert.deepEqual(r.spans.days, [0, 0, 0, 0]);
+  // Nothing can be computed without a period, so every row is adjustment-only.
+  assert.ok(r.schedule.rows.every((row) => row.computed === 0));
+});
+
 test('missing rate months are reported by name rather than throwing', () => {
   const result = calculate({ ...input, rates: RATES_2023_24.filter((r) => r.month !== '2024-03') });
   const problem = result.problems.find((p) => p.code === 'missing_rates');

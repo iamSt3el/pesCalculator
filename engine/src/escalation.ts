@@ -3,7 +3,9 @@ import {
   baseQuarterOf, buildRateIndex, monthValue, quarterMean,
   quartersUnderConsideration, resolveBaseRates, type ResolvedBase,
 } from './indices.ts';
-import { buildSchedule, computeSpans, type PaymentSchedule, type SpanTable } from './spans.ts';
+import {
+  buildSchedule, computeSpans, emptySpanTable, type PaymentSchedule, type SpanTable,
+} from './spans.ts';
 import type {
   ComponentConfig, ComponentKey, ContractInput, Month,
   ProgressRow, Quarter, RateRow,
@@ -63,7 +65,16 @@ export function calculate(input: CalculationInput): CalculationResult {
   const problems: Problem[] = [];
   const rates = buildRateIndex(input.rates);
 
-  if (contract.actualCompletion < contract.commencement) {
+  // A contract is created before its dates are known. Spreading the work over a
+  // period that has no ends produced a NaN date and threw, so the whole
+  // calculation endpoint failed for every contract until both dates were filled.
+  const hasPeriod = Boolean(contract.commencement && contract.actualCompletion);
+  if (!hasPeriod) {
+    problems.push({
+      code: 'invalid_period',
+      message: 'The date of commencement and the actual date of completion are both needed.',
+    });
+  } else if (contract.actualCompletion < contract.commencement) {
     problems.push({
       code: 'invalid_period',
       message: 'Actual completion is earlier than the date of commencement.',
@@ -78,9 +89,15 @@ export function calculate(input: CalculationInput): CalculationResult {
     });
   }
 
-  const spans = computeSpans(contract.commencement, contract.actualCompletion, contract.workDoneAmount);
+  const spans = hasPeriod
+    ? computeSpans(contract.commencement, contract.actualCompletion, contract.workDoneAmount)
+    : emptySpanTable();
   const schedule = buildSchedule(progress, spans, contract.workDoneAmount, adjustments);
-  if (schedule.total !== contract.workDoneAmount) {
+  // The monthly figures are allocated in whole rupees (spec 3.5), so the schedule
+  // can only ever reach the work done amount rounded. Comparing against the
+  // unrounded figure reported a drift that no edit could clear, which left every
+  // contract whose amount carried paise permanently provisional.
+  if (schedule.total !== roundHalfAwayFromZero(contract.workDoneAmount)) {
     problems.push({
       code: 'schedule_drift',
       message: `Schedule totals ${schedule.total.toFixed(2)}, but the work done amount is ${contract.workDoneAmount.toFixed(2)}.`,

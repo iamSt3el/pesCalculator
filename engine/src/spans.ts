@@ -10,6 +10,20 @@ export interface SpanTable {
 }
 
 /**
+ * A period that cannot be spread yet: a contract is created before its dates are
+ * known, and the months have to render as empty rather than throw on a NaN date.
+ */
+export function emptySpanTable(): SpanTable {
+  return {
+    totalDays: 0,
+    days: [0, 0, 0, 0],
+    values: [0, 0, 0, 0],
+    perDay: [0, 0, 0, 0],
+    endDates: ['', '', '', ''],
+  };
+}
+
+/**
  * Spec 3.1. The period is cut at 1/4, 1/2, 3/4 and full; the work value follows
  * the standard S-curve, cumulative 1/8, 3/8, 3/4, 1 - so each span carries
  * 1/8, 1/4, 3/8, 1/4 of the total.

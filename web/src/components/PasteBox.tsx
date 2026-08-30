@@ -1,21 +1,19 @@
 import { useState, type FormEvent } from 'react';
 import { api } from '../api.ts';
+import { submitPaste, type PasteOutcome } from '../paste.ts';
 
 export function PasteBox({ onDone }: { onDone: () => void }) {
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ written: number; errors: string[] } | null>(null);
+  const [result, setResult] = useState<PasteOutcome | null>(null);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setBusy(true);
-    try {
-      const r = await api.pasteRates(text);
-      setResult({ written: r.written, errors: r.errors });
-      if (r.written > 0) { setText(''); onDone(); }
-    } finally {
-      setBusy(false);
-    }
+    const outcome = await submitPaste(text, (t) => api.pasteRates(t));
+    setResult(outcome);
+    setBusy(false);
+    if (outcome.written > 0) { setText(''); onDone(); }
   }
 
   return (
@@ -36,6 +34,11 @@ export function PasteBox({ onDone }: { onDone: () => void }) {
 
       {result && (
         <>
+          {result.failure && (
+            <p className="notice">
+              <strong>Those months could not be added.</strong> {result.failure}
+            </p>
+          )}
           {result.written > 0 && (
             <p className="notice notice--ok">Added {result.written} month{result.written === 1 ? '' : 's'}.</p>
           )}

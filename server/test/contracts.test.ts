@@ -4,6 +4,7 @@ import {
   contractOwnerId, createContract, getContract, listContracts, replaceComponents,
   replaceProgress, replaceAdjustments, updateContract, deleteContract,
 } from '../src/repo/contracts.ts';
+import { adjustmentsBody, progressBody } from '../src/routes/contracts.ts';
 import { pool } from '../src/db.ts';
 import { runMigrations } from '../src/migrate.ts';
 
@@ -35,6 +36,26 @@ test('a new contract arrives with six components carrying the default rules', as
   assert.equal(loaded.components.find((c) => c.key === 'bitumen')!.factor, 0.85);
   assert.equal(loaded.components.find((c) => c.key === 'labour')!.factor, 0.75);
   assert.equal(loaded.contract.bitumenOffsetDays, 28);
+});
+
+test('clearing a text field stores an empty string, not a null', async () => {
+  const c = await createContract('to be emptied', owner);
+  await updateContract(c.id, {
+    contractor: 'M/s. Pradeep Kumar', workName: 'Widening', woNoDate: 'WO/12',
+  });
+  await updateContract(c.id, { contractor: '', workName: '', woNoDate: '' });
+
+  const loaded = await getContract(c.id);
+  assert.equal(loaded!.contract.contractor, '');
+  assert.equal(loaded!.contract.workName, '');
+  assert.equal(loaded!.contract.woNoDate, '');
+});
+
+test('clearing a date stores a null, so the field reads back as empty', async () => {
+  const c = await createContract('date clearing', owner);
+  await updateContract(c.id, { bidDate: '2023-09-12' });
+  await updateContract(c.id, { bidDate: '' });
+  assert.equal((await getContract(c.id))!.contract.bidDate, '');
 });
 
 test('dates round-trip as YYYY-MM-DD strings without timezone drift', async () => {
@@ -120,4 +141,29 @@ test('an unowned contract belongs to nobody and appears in no list', async () =>
   assert.equal((await listContracts(owner)).some((c) => c.id === orphan), false);
   assert.equal((await listContracts(other)).some((c) => c.id === orphan), false);
   assert.equal(await contractOwnerId(orphan), null);
+});
+
+test('a progress payload naming the same month twice is refused', () => {
+  const twice = progressBody.safeParse([
+    { month: '2023-07', spanDays: [1, 0, 0, 0] },
+    { month: '2023-07', spanDays: [2, 0, 0, 0] },
+  ]);
+  assert.equal(twice.success, false);
+
+  const once = progressBody.safeParse([{ month: '2023-07', spanDays: [1, 0, 0, 0] }]);
+  assert.equal(once.success, true);
+});
+
+test('an adjustments payload naming the same month twice is refused', () => {
+  const twice = adjustmentsBody.safeParse([
+    { month: '2023-07', adjustment: 5 },
+    { month: '2023-07', adjustment: 6 },
+  ]);
+  assert.equal(twice.success, false);
+
+  const distinct = adjustmentsBody.safeParse([
+    { month: '2023-07', adjustment: 5 },
+    { month: '2023-08', adjustment: 6 },
+  ]);
+  assert.equal(distinct.success, true);
 });
