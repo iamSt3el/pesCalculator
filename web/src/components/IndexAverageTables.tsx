@@ -1,6 +1,6 @@
 import { COMPONENT_KEYS, COMPONENT_LABELS, type ComponentKey } from '../api.ts';
 import { useContract } from '../ContractLayout.tsx';
-import { formatIndex, formatMonth, formatQuarter } from '../format.ts';
+import { formatComponentIndex, formatMonth, formatQuarter } from '../format.ts';
 import { monthsOfQuarter } from '../months.ts';
 
 /**
@@ -47,7 +47,7 @@ export function IndexAverageTables() {
                   <td>{formatMonth(m)}</td>
                   {COMPONENT_KEYS.map((k) => (
                     <td key={k} className="num">
-                      {formatIndex(rateFor(m, k), k === 'bitumen' ? 0 : 2)}
+                      {formatComponentIndex(rateFor(m, k), k, 2)}
                     </td>
                   ))}
                 </tr>
@@ -64,7 +64,7 @@ export function IndexAverageTables() {
                     : null;
                   return (
                     <td key={k} className="num" style={{ color: 'var(--stamp)' }}>
-                      {formatIndex(mean, k === 'bitumen' ? 0 : 4)}
+                      {formatComponentIndex(mean, k)}
                     </td>
                   );
                 })}

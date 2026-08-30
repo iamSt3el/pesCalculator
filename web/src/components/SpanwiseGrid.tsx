@@ -88,7 +88,7 @@ export function SpanwiseGrid() {
                   <td>Span {i + 1}</td>
                   <td className="num">{spans.days[i]}</td>
                   <td className="num">{formatRupees(spans.values[i]!)}</td>
-                  <td className="num">{formatRupees(spans.perDay[i]!, 2)}</td>
+                  <td className="num">{formatRupees(spans.perDay[i]!)}</td>
                   <td>{formatDate(spans.endDates[i]!)}</td>
                 </tr>
               ))}

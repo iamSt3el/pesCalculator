@@ -83,7 +83,7 @@ export function calculate(input: CalculationInput): CalculationResult {
   if (schedule.total !== contract.workDoneAmount) {
     problems.push({
       code: 'schedule_drift',
-      message: `Schedule totals ${schedule.total}, but the work done amount is ${contract.workDoneAmount}.`,
+      message: `Schedule totals ${schedule.total.toFixed(2)}, but the work done amount is ${contract.workDoneAmount.toFixed(2)}.`,
     });
   }
 
@@ -148,7 +148,7 @@ export function calculate(input: CalculationInput): CalculationResult {
     spans, schedule, baseQuarter, bases, quarters, lines, componentTotals,
     grandTotal,
     alreadyPaid: contract.alreadyPaid,
-    payable: roundHalfAwayFromZero(grandTotal - contract.alreadyPaid),
+    payable: roundHalfAwayFromZero(grandTotal - contract.alreadyPaid, 2),
     problems,
   };
 }

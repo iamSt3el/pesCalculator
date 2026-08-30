@@ -3,7 +3,7 @@ import {
   type ComponentConfig, type ComponentKey,
 } from '../api.ts';
 import { useContract } from '../ContractLayout.tsx';
-import { formatDate, formatIndex, formatMonth, formatQuarter, formatRupees } from '../format.ts';
+import { formatComponentIndex, formatDate, formatMonth, formatQuarter, formatRupees } from '../format.ts';
 
 interface Props {
   /** Local, possibly-unsaved rows on the editable stage; the saved ones in print. */
@@ -79,7 +79,7 @@ export function BaseRateSummary({ rows, onOverride }: Props) {
                       )}
                     </td>
                     <td className="num" style={base?.overridden ? { color: 'var(--stamp)' } : undefined}>
-                      {formatIndex(base?.value ?? null, key === 'bitumen' ? 0 : 4)}
+                      {formatComponentIndex(base?.value ?? null, key)}
                     </td>
                     {onOverride && (
                       <td>

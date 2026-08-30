@@ -4,6 +4,9 @@ import { useContract } from '../ContractLayout.tsx';
 import { formatMonth, formatQuarter, formatRupees } from '../format.ts';
 import { useDebouncedSave, useSettle } from '../hooks.ts';
 
+/** The adjustment column stores two decimals, so the field cannot go finer. */
+const toPaise = (raw: string): number => Math.round(Number(raw) * 100) / 100 || 0;
+
 function Computed({ value }: { value: number }) {
   const settle = useSettle(value);
   return <span className={`num ${settle}`}>{formatRupees(value)}</span>;
@@ -56,9 +59,9 @@ export function ScheduleTable() {
                 <td style={{ whiteSpace: 'nowrap' }}>{formatMonth(r.month)}</td>
                 <td className="r"><Computed value={r.computed} /></td>
                 <td>
-                  <input className="cell" type="number" step="1"
+                  <input className="cell" type="number" step="0.01"
                          value={adjustmentFor(r.month) || ''} placeholder="0"
-                         onChange={(e) => setAdjustment(r.month, Number(e.target.value) || 0)} />
+                         onChange={(e) => setAdjustment(r.month, toPaise(e.target.value))} />
                 </td>
                 <td className={`num${r.payment < 0 ? ' num--negative' : ''}`}>{formatRupees(r.payment)}</td>
               </tr>

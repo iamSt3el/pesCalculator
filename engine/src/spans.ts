@@ -125,5 +125,6 @@ export function buildSchedule(
     byQuarter.set(q, (byQuarter.get(q) ?? 0) + r.payment);
   }
 
-  return { rows, total: rows.reduce((a, r) => a + r.payment, 0), byQuarter };
+  const total = roundHalfAwayFromZero(rows.reduce((a, r) => a + r.payment, 0), 2);
+  return { rows, total, byQuarter };
 }

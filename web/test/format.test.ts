@@ -1,19 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatRupees, formatIndex, formatMonth } from '../src/format.ts';
+import {
+  formatRupees, formatComponentIndex, formatIndex, formatMonth, rupeesInWords,
+} from '../src/format.ts';
 
 test('formatRupees groups digits the Indian way', () => {
-  assert.equal(formatRupees(21_717_359), '2,17,17,359');
-  assert.equal(formatRupees(172_604), '1,72,604');
-  assert.equal(formatRupees(0), '0');
+  assert.equal(formatRupees(21_717_359), '2,17,17,359.00');
+  assert.equal(formatRupees(172_604), '1,72,604.00');
+  assert.equal(formatRupees(0), '0.00');
 });
 
 test('formatRupees marks a negative amount with a true minus sign', () => {
-  assert.equal(formatRupees(-18_356), '−18,356');
+  assert.equal(formatRupees(-18_356), '−18,356.00');
 });
 
-test('formatRupees keeps paise when asked', () => {
-  assert.equal(formatRupees(-18_356.293, 2), '−18,356.29');
+test('formatRupees writes money to the paise and no finer', () => {
+  assert.equal(formatRupees(-18_356.293), '−18,356.29');
+  assert.equal(formatRupees(1234.5), '1,234.50');
+  assert.equal(formatRupees(1234.567), '1,234.57');
+});
+
+test('formatRupees still takes an explicit precision', () => {
+  assert.equal(formatRupees(1234.56, 0), '1,235');
+});
+
+test('formatComponentIndex writes bitumen as money and the rest as indices', () => {
+  assert.equal(formatComponentIndex(39_809.4567, 'bitumen'), '39,809.46');
+  assert.equal(formatComponentIndex(92.766666666, 'steel'), '92.7667');
+  assert.equal(formatComponentIndex(99.1, 'labour', 2), '99.10');
+  assert.equal(formatComponentIndex(null, 'bitumen'), '—');
 });
 
 test('formatIndex shows a fixed number of decimals and an em dash for nothing', () => {
@@ -25,4 +40,15 @@ test('formatIndex shows a fixed number of decimals and an em dash for nothing', 
 test('formatMonth renders a month key for a person', () => {
   assert.equal(formatMonth('2023-09'), 'Sep 2023');
   assert.equal(formatMonth('2024-01'), 'Jan 2024');
+});
+
+test('rupeesInWords writes the rupees and the paise on the Indian scale', () => {
+  assert.equal(rupeesInWords(172_604), 'One lakh seventy-two thousand six hundred four rupees only');
+  assert.equal(
+    rupeesInWords(72_603.63),
+    'Seventy-two thousand six hundred three rupees and sixty-three paise only',
+  );
+  assert.equal(rupeesInWords(0.5), 'Fifty paise only');
+  assert.equal(rupeesInWords(0), 'zero rupees only');
+  assert.equal(rupeesInWords(-18_356.05), 'minus Eighteen thousand three hundred fifty-six rupees and five paise only');
 });

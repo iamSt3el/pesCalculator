@@ -56,6 +56,13 @@ test('payable is the rounded grand total less what has already been paid', () =>
   assert.equal(withPaid.payable, 72604);
 });
 
+test('payable is carried to the paise, so the bill subtracts exactly', () => {
+  const withPaise = calculate({
+    ...input, contract: { ...CONTRACT_168, alreadyPaid: 100000.37 },
+  });
+  assert.equal(withPaise.payable, 72603.63);
+});
+
 test('missing rate months are reported by name rather than throwing', () => {
   const result = calculate({ ...input, rates: RATES_2023_24.filter((r) => r.month !== '2024-03') });
   const problem = result.problems.find((p) => p.code === 'missing_rates');

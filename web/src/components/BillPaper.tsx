@@ -2,7 +2,7 @@ import { COMPONENT_KEYS, COMPONENT_LABELS, type ComponentKey } from '../api.ts';
 import { FormulaStrip } from './FormulaStrip.tsx';
 import { useContract } from '../ContractLayout.tsx';
 import {
-  formatDate, formatIndex, formatMonth, formatQuarter, formatRupees, rupeesInWords,
+  formatComponentIndex, formatDate, formatMonth, formatQuarter, formatRupees, rupeesInWords,
 } from '../format.ts';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -71,7 +71,7 @@ export function BillPaper() {
               <h2>{COMPONENT_LABELS[key]}</h2>
               <span className="meta">
                 share {config?.percent ?? 0}% · factor {config?.factor ?? 0} · base{' '}
-                {formatIndex(calculation.bases[key]?.value ?? null, key === 'bitumen' ? 0 : 4)}
+                {formatComponentIndex(calculation.bases[key]?.value ?? null, key)}
                 {' '}({baseText(key)})
               </span>
             </div>
@@ -82,7 +82,7 @@ export function BillPaper() {
               <span style={{ fontWeight: 600 }}>Total, {COMPONENT_LABELS[key]}</span>
               <span className={`num${total < 0 ? ' num--negative' : ''}`}
                     style={{ fontWeight: 600, fontSize: 15 }}>
-                {formatRupees(total, 2)}
+                {formatRupees(total)}
               </span>
             </div>
           </section>
@@ -94,12 +94,12 @@ export function BillPaper() {
         <div className="spread">
           <span>Grand total — Labour + Material + Cement + Steel + POL + Bitumen</span>
           <span className={`num${calculation.grandTotal < 0 ? ' num--negative' : ''}`}>
-            {formatRupees(calculation.grandTotal, 2)}
+            {formatRupees(calculation.grandTotal)}
           </span>
         </div>
         <div className="spread" style={{ marginTop: 6 }}>
           <span>Less escalation already paid</span>
-          <span className="num">{formatRupees(calculation.alreadyPaid, 2)}</span>
+          <span className="num">{formatRupees(calculation.alreadyPaid)}</span>
         </div>
         <div className="spread"
              style={{ borderTop: '1px solid var(--rule-strong)', marginTop: 14, paddingTop: 14 }}>

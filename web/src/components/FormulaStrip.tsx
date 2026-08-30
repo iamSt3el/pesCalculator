@@ -1,5 +1,5 @@
 import type { EscalationLine } from '../api.ts';
-import { formatIndex, formatMonth, formatQuarter, formatRupees } from '../format.ts';
+import { formatComponentIndex, formatMonth, formatQuarter, formatRupees } from '../format.ts';
 
 /**
  * One escalation line laid out on the shared grid of its parent .formula-block.
@@ -9,7 +9,7 @@ import { formatIndex, formatMonth, formatQuarter, formatRupees } from '../format
  */
 export function FormulaStrip({ line }: { line: EscalationLine }) {
   const label = line.periodKind === 'month' ? formatMonth(line.period) : formatQuarter(line.period);
-  const dp = line.component === 'bitumen' ? 0 : 4;
+  const index = (n: number | null) => formatComponentIndex(n, line.component);
 
   return (
     <>
@@ -21,14 +21,14 @@ export function FormulaStrip({ line }: { line: EscalationLine }) {
       <span className="f-n">₹{formatRupees(line.value)}</span>
       <span className="f-op">×</span>
       <span className="f-paren">(</span>
-      <span className="f-n">{formatIndex(line.currentIndex, dp)}</span>
+      <span className="f-n">{index(line.currentIndex)}</span>
       <span className="f-op">−</span>
-      <span className="f-n">{formatIndex(line.baseIndex, dp)}</span>
+      <span className="f-n">{index(line.baseIndex)}</span>
       <span className="f-paren">)</span>
       <span className="f-op">/</span>
-      <span className="f-n">{formatIndex(line.baseIndex, dp)}</span>
+      <span className="f-n">{index(line.baseIndex)}</span>
       <span className={`f-amount${line.amount < 0 ? ' num--negative' : ''}`}>
-        {formatRupees(line.amount, 2)}
+        {formatRupees(line.amount)}
       </span>
     </>
   );

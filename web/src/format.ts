@@ -1,8 +1,11 @@
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** Indian digit grouping, with a typographic minus rather than a hyphen. */
-export function formatRupees(n: number, dp = 0): string {
+/**
+ * Indian digit grouping, with a typographic minus rather than a hyphen.
+ * Money always carries its paise: two decimals, never more, never fewer.
+ */
+export function formatRupees(n: number, dp = 2): string {
   const formatted = new Intl.NumberFormat('en-IN', {
     minimumFractionDigits: dp, maximumFractionDigits: dp,
   }).format(Math.abs(n));
@@ -11,6 +14,18 @@ export function formatRupees(n: number, dp = 0): string {
 
 export function formatIndex(n: number | null | undefined, dp = 4): string {
   return n === null || n === undefined ? '—' : n.toFixed(dp);
+}
+
+/**
+ * Five of the six components are dimensionless indices, written to `dp`.
+ * Bitumen VG-10 is not an index at all — it is a rupee rate per tonne, so it is
+ * written as money: grouped the Indian way, to the paise.
+ */
+export function formatComponentIndex(
+  n: number | null | undefined, key: string, dp = 4,
+): string {
+  if (n === null || n === undefined) return '—';
+  return key === 'bitumen' ? formatRupees(n) : formatIndex(n, dp);
 }
 
 export function formatMonth(m: string): string {
@@ -42,11 +57,8 @@ function under1000(n: number): string {
   return `${ONES[Math.floor(n / 100)]} hundred${n % 100 ? ` ${under1000(n % 100)}` : ''}`;
 }
 
-/** Rupees in words on the Indian scale, for the report's "Say in Rs." line. */
-export function rupeesInWords(n: number): string {
-  const sign = n < 0 ? 'minus ' : '';
-  let v = Math.abs(Math.round(n));
-  if (v === 0) return 'zero rupees only';
+/** A whole number on the Indian scale: crore, lakh, thousand, then the rest. */
+function indianScale(v: number): string {
   const parts: string[] = [];
   const scales: Array<[number, string]> = [[10_000_000, 'crore'], [100_000, 'lakh'], [1000, 'thousand']];
   for (const [size, name] of scales) {
@@ -54,6 +66,25 @@ export function rupeesInWords(n: number): string {
     if (count > 0) { parts.push(`${under1000(count)} ${name}`); v -= count * size; }
   }
   if (v > 0) parts.push(under1000(v));
-  const words = parts.join(' ');
-  return `${sign}${words.charAt(0).toUpperCase()}${words.slice(1)} rupees only`;
+  return parts.join(' ');
+}
+
+/**
+ * Rupees in words on the Indian scale, for the report's "Say in Rs." line.
+ * Money is held to the paise, so the words carry the paise too — a bill whose
+ * figure reads 72,603.63 and whose words read "…four rupees only" is a bill an
+ * auditor will send back.
+ */
+export function rupeesInWords(n: number): string {
+  const sign = n < 0 ? 'minus ' : '';
+  const paise = Math.round(Math.abs(n) * 100);
+  const rupees = Math.floor(paise / 100);
+  const fraction = paise % 100;
+
+  if (rupees === 0 && fraction === 0) return 'zero rupees only';
+  const words = [
+    rupees > 0 ? `${indianScale(rupees)} rupees` : '',
+    fraction > 0 ? `${indianScale(fraction)} paise` : '',
+  ].filter(Boolean).join(' and ');
+  return `${sign}${words.charAt(0).toUpperCase()}${words.slice(1)} only`;
 }

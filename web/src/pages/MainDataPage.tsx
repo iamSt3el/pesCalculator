@@ -11,6 +11,9 @@ type TextKey = 'agreementNo' | 'contractor' | 'workName' | 'woNoDate';
 type DateKey = 'bidDate' | 'commencement' | 'stipulatedCompletion' | 'actualCompletion';
 type NumKey = 'woAmount' | 'workDoneAmount' | 'bitumenOffsetDays' | 'alreadyPaid';
 
+/** Money is held to the paise the column stores, so the field cannot drift finer. */
+const toPaise = (raw: string): number => Math.round(Number(raw) * 100) / 100 || 0;
+
 export function MainDataPage() {
   const { bundle, calculation, reload } = useContract();
   const [form, setForm] = useState<Contract>(bundle.contract);
@@ -49,12 +52,18 @@ export function MainDataPage() {
     </label>
   );
 
-  /** `money` echoes the figure grouped, so eight typed digits can be checked. */
+  /**
+   * `money` echoes the figure grouped, so eight typed digits can be checked, and
+   * steps in paise — the column stores two decimals, so anything finer typed
+   * here would be silently truncated on the way to the database.
+   */
   const number = (key: NumKey, label: string, { step = '1', money = false } = {}) => (
     <label className="field">
       {label}
-      <input className="num" type="number" step={step} value={form[key]}
-             onChange={(e) => set({ [key]: Number(e.target.value) } as Partial<Contract>)} />
+      <input className="num" type="number" step={money ? '0.01' : step} value={form[key]}
+             onChange={(e) => set({
+               [key]: money ? toPaise(e.target.value) : Number(e.target.value),
+             } as Partial<Contract>)} />
       {money && <span className="echo echo--num">₹{formatRupees(form[key])}</span>}
     </label>
   );
