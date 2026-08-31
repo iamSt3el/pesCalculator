@@ -73,10 +73,14 @@
   }
   .shell { display: block; }
   body { background: #fff; }
-  /* The sheet's margin lives here rather than in @page, so that @page can be
-     zero — Chrome draws its URL/title/date strip in the page margin, and with
-     no margin there is nowhere for it to go. Page numbers go with it. */
-  .shell__main { max-width: none !important; padding: 16mm 14mm !important; }
+  /* The page margin lives on each .sheet rather than in @page, so that @page
+     can be zero — Chrome draws its URL/title/date strip in the page margin,
+     and with no margin there is nowhere for it to go.
+     It sits on the sheet, not on this container: a container's padding applies
+     once at the very top and once at the very bottom of the whole document,
+     so a per-sheet height could not be reckoned against it, and every sheet
+     overran onto a blank second page. */
+  .shell__main { max-width: none !important; padding: 0 !important; }
   /* Doubled class only to outrank the screen card: this file is bundled
      before styles.css, so at equal specificity the screen rule would win. */
   .report .paper.paper { border: none; border-radius: 0; padding: 0; }
@@ -103,9 +107,17 @@
   /* One stage per sheet. The last takes no break after it, or printers that
      honour it emit a trailing blank page. */
   .sheet { break-after: page; }
-  /* Fill the page so the foot lands at its bottom, not under whatever content
-     happened to end. 32mm is the 16mm top and bottom padding on .shell__main. */
-  .sheet { min-height: calc(297mm - 32mm); }
+  /**
+   * One sheet, one page. The padding is the page margin and is inside the box,
+   * so the whole thing measures 288mm against A4's 297mm — deliberately 9mm
+   * short. An exact 297mm rounds up on any sub-pixel and spills a blank page,
+   * which is what "6 sheets of paper" for a three-sheet bill looks like.
+   */
+  .sheet {
+    box-sizing: border-box;
+    min-height: 288mm;
+    padding: 16mm 14mm;
+  }
   .sheet--last { break-after: auto; }
   .sheet + .sheet { margin-top: 0; padding-top: 0; border-top: none; }
   .sheet__title { color: #000; }
