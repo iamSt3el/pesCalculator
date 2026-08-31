@@ -26,7 +26,7 @@ export function PrintPage() {
 
   return (
     <div className="report">
-      <div className="spread no-print" style={{ marginBottom: 20 }}>
+      <div className="spread no-print bar">
         <div>
           <h1 className="title">Print bill</h1>
           <p className="subtitle">

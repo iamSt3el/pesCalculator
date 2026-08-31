@@ -3,7 +3,7 @@ import { api, type Contract } from '../api.ts';
 import { ComponentTable } from '../components/ComponentTable.tsx';
 import { SpanwiseGrid } from '../components/SpanwiseGrid.tsx';
 import { PrintButton } from '../components/PrintButton.tsx';
-import { useContract } from '../ContractLayout.tsx';
+import { useContract, useReportSave } from '../ContractLayout.tsx';
 import { formatDate, formatRupees } from '../format.ts';
 import { useDebouncedSave } from '../hooks.ts';
 
@@ -23,6 +23,8 @@ export function MainDataPage() {
     await api.putContract(id, patch);
     await reload();
   });
+
+  useReportSave('mainData', saver.saving, saver.error);
 
   const set = (patch: Partial<Contract>) => {
     const next = { ...form, ...patch };
@@ -73,7 +75,6 @@ export function MainDataPage() {
       <div className="spread">
         <h1 className="title">Main Data</h1>
         <div className="row">
-          <span className="saving">{saver.saving ? 'Saving…' : 'All changes saved'}</span>
           <PrintButton />
         </div>
       </div>
@@ -93,7 +94,7 @@ export function MainDataPage() {
         </div>
       </section>
 
-      <section className="panel" style={{ marginTop: 16 }}>
+      <section className="panel stack-md">
         <p className="eyebrow">Dates</p>
         <div className="grid-fields">
           {date('bidDate', 'Last date of bid submission')}
@@ -104,7 +105,7 @@ export function MainDataPage() {
           {number('alreadyPaid', 'Escalation already paid', { money: true })}
         </div>
         {calculation && (
-          <p className="hint" style={{ marginTop: 12, marginBottom: 0 }}>
+          <p className="hint stack-sm flush-bottom">
             Work period <strong>{calculation.spans.totalDays} days</strong>, in four spans ending{' '}
             {calculation.spans.endDates.map(formatDate).join(', ')}. Base quarter{' '}
             <strong>{calculation.baseQuarter}</strong>, from the bid date.
@@ -112,7 +113,6 @@ export function MainDataPage() {
         )}
       </section>
 
-      {saver.error && <p className="notice">{saver.error}</p>}
 
       <ComponentTable />
       <SpanwiseGrid />

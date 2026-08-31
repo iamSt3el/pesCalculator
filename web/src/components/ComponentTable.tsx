@@ -4,7 +4,7 @@ import {
   type BaseRule, type ComponentConfig,
 } from '../api.ts';
 import { useDebouncedSave } from '../hooks.ts';
-import { useContract } from '../ContractLayout.tsx';
+import { useContract, useReportSave } from '../ContractLayout.tsx';
 import { useGridKeys } from '../grid.ts';
 
 const RULE_LABELS: Record<BaseRule, string> = {
@@ -21,6 +21,8 @@ export function ComponentTable() {
     await reload();
   });
 
+  useReportSave('components', saver.saving, saver.error);
+
   const update = (key: string, patch: Partial<ComponentConfig>) => {
     const next = rows.map((r) => (r.key === key ? { ...r, ...patch } : r));
     setRows(next);
@@ -34,7 +36,7 @@ export function ComponentTable() {
   const balanced = Math.abs(total - 100) < 1e-9;
 
   return (
-    <section style={{ marginTop: 28 }}>
+    <section className="section">
       <div className="section-head"><h2>Component shares</h2></div>
       <p className="subtitle">
         The share of the work each component represents, and the factor from the agreement.
@@ -45,10 +47,10 @@ export function ComponentTable() {
           <thead>
             <tr>
               <th>Component</th>
-              <th className="r" style={{ width: 110 }}>Share %</th>
-              <th className="r" style={{ width: 90 }}>Factor</th>
-              <th style={{ width: 230 }}>Base index from</th>
-              <th className="r" style={{ width: 130 }}>Override</th>
+              <th className="r col-sm">Share %</th>
+              <th className="r col-xs">Factor</th>
+              <th className="col-lg">Base index from</th>
+              <th className="r col-md">Override</th>
             </tr>
           </thead>
           <tbody ref={grid}>
@@ -96,14 +98,13 @@ export function ComponentTable() {
             <tr>
               <td>Total</td>
               <td className={`num${balanced ? '' : ' num--negative'}`}>{total.toFixed(2)}</td>
-              <td colSpan={3} className="hint" style={{ fontWeight: 400 }}>
+              <td colSpan={3} className="hint tight">
                 {balanced ? 'Shares total 100%.' : `Shares total ${total.toFixed(2)}%. They must total 100%.`}
               </td>
             </tr>
           </tfoot>
         </table>
       </div>
-      {saver.error && <p className="notice">{saver.error}</p>}
     </section>
   );
 }

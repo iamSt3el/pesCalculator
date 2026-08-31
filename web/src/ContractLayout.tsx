@@ -12,6 +12,20 @@ export interface ContractContext {
   /** Refetch everything downstream after a save, so derived figures stay true. */
   reload: () => Promise<void>;
   setBundle: (b: ContractBundle) => void;
+  /**
+   * Savers report here and the running head shows the aggregate. Six components
+   * own a saver and three can be mounted at once, so this is keyed rather than
+   * last-write-wins: one grid finishing must not clear another's "Saving…".
+   */
+  reportSave: (key: string, saving: boolean, error: string | null) => void;
+}
+
+/** Keeps one saver's state in the contract's running head, and tidies up after itself. */
+export function useReportSave(key: string, saving: boolean, error: string | null) {
+  const { reportSave } = useContract();
+  useEffect(() => { reportSave(key, saving, error); }, [key, saving, error, reportSave]);
+  // A stage left behind must not leave its error hanging in the head.
+  useEffect(() => () => reportSave(key, false, null), [key, reportSave]);
 }
 
 export function useContract(): ContractContext {
@@ -25,6 +39,16 @@ export function ContractLayout({ onSignOut }: { onSignOut: () => void }) {
   const [rates, setRates] = useState<RateRow[]>([]);
   const [calculation, setCalculation] = useState<Calculation | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saves, setSaves] = useState<Record<string, { saving: boolean; error: string | null }>>({});
+
+  const reportSave = useCallback((key: string, saving: boolean, err: string | null) => {
+    setSaves((prev) => {
+      const held = prev[key];
+      // Bail on an unchanged report, or the effect that sends it loops forever.
+      if (held && held.saving === saving && held.error === err) return prev;
+      return { ...prev, [key]: { saving, error: err } };
+    });
+  }, []);
 
   const reload = useCallback(async () => {
     try {
@@ -48,7 +72,10 @@ export function ContractLayout({ onSignOut }: { onSignOut: () => void }) {
   if (!bundle) return <Spinner page />;
 
   const readiness = computeReadiness(bundle, rates, calculation);
-  const context: ContractContext = { bundle, rates, calculation, reload, setBundle };
+  const context: ContractContext = { bundle, rates, calculation, reload, setBundle, reportSave };
+  const pending = Object.values(saves);
+  const saving = pending.some((v) => v.saving);
+  const saveError = pending.map((v) => v.error).find(Boolean) ?? null;
 
   return (
     <Shell
@@ -56,6 +83,8 @@ export function ContractLayout({ onSignOut }: { onSignOut: () => void }) {
       agreementNo={bundle.contract.agreementNo}
       contractor={bundle.contract.contractor}
       calculation={calculation}
+      saving={saving}
+      error={saveError}
       onSignOut={onSignOut}
     >
       <Outlet context={context} />

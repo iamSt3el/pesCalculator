@@ -42,12 +42,12 @@ export function BaseRateSummary({ rows, onOverride }: Props) {
           <div><div className="hint">Contractor</div>{contract.contractor || '—'}</div>
           <div><div className="hint">Bid submitted</div>{formatDate(contract.bidDate)}</div>
           <div><div className="hint">Work done amount</div>
-            <span className="num" style={{ textAlign: 'left' }}>{formatRupees(contract.workDoneAmount)}</span>
+            <span className="num num--left">{formatRupees(contract.workDoneAmount)}</span>
           </div>
         </div>
       </section>
 
-      <section style={{ marginTop: 28 }} className="component">
+      <section className="component section">
         <h2>Base index per component</h2>
         <p className="subtitle">
           {onOverride
@@ -63,7 +63,7 @@ export function BaseRateSummary({ rows, onOverride }: Props) {
                 <th className="r">Share %</th>
                 <th>Base index from</th>
                 <th className="r">Value</th>
-                {onOverride && <th className="r" style={{ width: 140 }}>Override</th>}
+                {onOverride && <th className="r col-md">Override</th>}
               </tr>
             </thead>
             <tbody>
@@ -74,13 +74,8 @@ export function BaseRateSummary({ rows, onOverride }: Props) {
                   <tr key={key}>
                     <td>{COMPONENT_LABELS[key]}</td>
                     <td className="num">{row ? row.percent.toFixed(2) : '—'}</td>
-                    <td>
-                      {ruleText(key)}
-                      {base?.overridden && (
-                        <span style={{ color: 'var(--accent)', marginLeft: 8, fontSize: 12 }}>Overridden</span>
-                      )}
-                    </td>
-                    <td className="num" style={base?.overridden ? { color: 'var(--accent)' } : undefined}>
+                    <td>{ruleText(key)}</td>
+                    <td className={`num${base?.overridden ? ' overridden' : ''}`}>
                       {formatComponentIndex(base?.value ?? null, key)}
                     </td>
                     {onOverride && (
@@ -97,6 +92,11 @@ export function BaseRateSummary({ rows, onOverride }: Props) {
             </tbody>
           </table>
         </div>
+        {COMPONENT_KEYS.some((k) => calculation?.bases[k]?.overridden) && (
+          <p className="footnote">
+            † Base index set by hand, not taken from the rates chart.
+          </p>
+        )}
       </section>
     </>
   );

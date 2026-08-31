@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api, type RateRow } from '../api.ts';
 import { PasteBox } from '../components/PasteBox.tsx';
 import { PrintButton } from '../components/PrintButton.tsx';
-import { useContract } from '../ContractLayout.tsx';
+import { useContract, useReportSave } from '../ContractLayout.tsx';
 import { formatMonth } from '../format.ts';
 import { useGridKeys } from '../grid.ts';
 import { useDebouncedSave } from '../hooks.ts';
@@ -42,6 +42,8 @@ export function RatesChartPage() {
     await api.putRates(next.filter((r) => isMonthKey(r.month)));
     await reload();
   });
+
+  useReportSave('rates', saver.saving, saver.error);
 
   // Server truth wins whenever it arrives, so the grid never shows stale figures
   // after a save, a paste, or an edit made on another screen.
@@ -118,14 +120,13 @@ export function RatesChartPage() {
           </p>
         </div>
         <div className="row">
-          <span className="saving">{saver.saving ? 'Saving…' : 'All changes saved'}</span>
           <PrintButton />
         </div>
       </div>
 
       {absent.length > 0 && (
         <div className="notice">
-          <div className="spread" style={{ alignItems: 'center' }}>
+          <div className="spread spread--center">
             <span>
               This contract needs {absent.map(formatMonth).join(', ')}, which the chart does not have yet.
             </span>
@@ -137,9 +138,9 @@ export function RatesChartPage() {
       )}
 
       {/* Above the grid, not buried under 39 rows of it. */}
-      <div className="panel" style={{ marginBottom: 12 }}>
-        <div className="spread" style={{ alignItems: 'baseline' }}>
-          <p className="eyebrow" style={{ margin: 0 }}>Months not in the chart yet</p>
+      <div className="panel bar">
+        <div className="spread spread--baseline">
+          <p className="eyebrow flush">Months not in the chart yet</p>
           <span className="hint">
             {rows.length} month{rows.length === 1 ? '' : 's'}
             {rows[0] ? `, ${formatMonth(rows[0].month)} to ${formatMonth(rows.at(-1)!.month)}` : ''}
@@ -147,7 +148,7 @@ export function RatesChartPage() {
         </div>
 
         {ahead.length > 0 ? (
-          <div className="row" style={{ marginTop: 10, gap: 8 }}>
+          <div className="row row--tight stack-sm">
             {ahead.map((m) => (
               <button key={m} className="chip" onClick={() => addMonths([m])}>+ {formatMonth(m)}</button>
             ))}
@@ -158,18 +159,17 @@ export function RatesChartPage() {
             )}
           </div>
         ) : (
-          <p className="hint" style={{ marginTop: 10 }}>
+          <p className="hint stack-sm">
             The chart is up to date — every month through the next six is already here.
           </p>
         )}
 
-        <div className="row" style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--rule)' }}>
+        <div className="row divider">
           <label className="field">
             Or any other month
             <input type="month" value={newMonth} onChange={(e) => setNewMonth(e.target.value)} />
           </label>
-          <button className="ghost" onClick={() => addMonths([newMonth])} disabled={!canAdd}
-                  style={{ alignSelf: 'end' }}>
+          <button className="ghost self-end" onClick={() => addMonths([newMonth])} disabled={!canAdd}>
             {rows.some((r) => r.month === newMonth) ? 'Already in the chart' : 'Add month'}
           </button>
         </div>
@@ -191,8 +191,7 @@ export function RatesChartPage() {
               <tr key={row.month} id={`rate-${row.month}`}
                   className={justAdded.includes(row.month) || flagged.has(row.month)
                     ? 'settled' : undefined}>
-                <td className={needed.has(row.month) ? 'month--needed' : undefined}
-                    style={{ whiteSpace: 'nowrap' }}>
+                <td className={`nowrap${needed.has(row.month) ? ' month--needed' : ''}`}>
                   {formatMonth(row.month)}
                   {gaps.has(row.month) && <span className="cell-sub">this bill needs it</span>}
                 </td>
@@ -232,7 +231,7 @@ export function RatesChartPage() {
           </tbody>
         </table>
       </div>
-      {(saver.error || error) && <p className="notice">{saver.error ?? error}</p>}
+      {error && <p className="notice">{error}</p>}
     </>
   );
 }

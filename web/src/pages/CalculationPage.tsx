@@ -15,17 +15,17 @@ export function CalculationPage() {
 
   return (
     <div className="report">
-      <div className="spread no-print" style={{ marginBottom: 20 }}>
+      <div className="spread no-print bar">
         <div>
           <span className="derived-mark">Computed</span>
-          <h1 className="title" style={{ marginTop: 4 }}>Calculation</h1>
+          <h1 className="title title--sub">Calculation</h1>
           <p className="subtitle">Every line shown in full, so the bill can be checked.</p>
         </div>
         <PrintButton />
       </div>
 
       {calculation.problems.length > 0 && (
-        <div className="no-print" style={{ marginBottom: 20 }}>
+        <div className="no-print bar">
           <p className="eyebrow">Why this bill is still provisional</p>
           <ProblemList calculation={calculation} />
         </div>

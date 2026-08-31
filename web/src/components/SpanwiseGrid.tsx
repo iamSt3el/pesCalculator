@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api, type ProgressRow } from '../api.ts';
-import { useContract } from '../ContractLayout.tsx';
+import { useContract, useReportSave } from '../ContractLayout.tsx';
 import { useGridKeys } from '../grid.ts';
 import { formatDate, formatMonth, formatRupees } from '../format.ts';
 import { useDebouncedSave, useSettle } from '../hooks.ts';
@@ -36,6 +36,8 @@ export function SpanwiseGrid() {
     await reload();
   });
 
+  useReportSave('progress', saver.saving, saver.error);
+
   const months = monthsBetween(contract.commencement, contract.actualCompletion);
   const { grid, onKeyDown } = useGridKeys(months.length, 4);
   const spans = calculation?.spans;
@@ -60,10 +62,10 @@ export function SpanwiseGrid() {
 
   if (months.length === 0) {
     return (
-      <section style={{ marginTop: 28 }}>
+      <section className="section">
         <div className="section-head"><h2>Work done, month by month</h2></div>
         <div className="panel">
-          <p style={{ margin: 0 }}>
+          <p className="flush">
             Set the date of commencement and the actual date of completion above, and the months appear here.
           </p>
         </div>
@@ -72,14 +74,14 @@ export function SpanwiseGrid() {
   }
 
   return (
-    <section style={{ marginTop: 28 }}>
+    <section className="section">
       <div className="section-head"><h2>Work done, month by month</h2></div>
       <p className="subtitle">
         Enter the days worked in each span. Amounts follow from the span rates.
       </p>
 
       {spans && (
-        <div className="panel panel--flush scroller--short" style={{ marginBottom: 12 }}>
+        <div className="panel panel--flush scroller--short bar">
           <table className="grid">
             <thead>
               <tr><th>Span</th><th className="r">Days</th><th className="r">Value</th><th className="r">Per day</th><th>Ends</th></tr>
@@ -104,10 +106,10 @@ export function SpanwiseGrid() {
           <thead>
             <tr>
               <th>Month</th>
-              <th className="r" style={{ width: 86 }}>Span 1</th>
-              <th className="r" style={{ width: 86 }}>Span 2</th>
-              <th className="r" style={{ width: 86 }}>Span 3</th>
-              <th className="r" style={{ width: 86 }}>Span 4</th>
+              <th className="r col-xs">Span 1</th>
+              <th className="r col-xs">Span 2</th>
+              <th className="r col-xs">Span 3</th>
+              <th className="r col-xs">Span 4</th>
               <th className="r">Amount</th>
             </tr>
           </thead>
@@ -116,7 +118,7 @@ export function SpanwiseGrid() {
               const days = daysFor(month);
               return (
                 <tr key={month}>
-                  <td style={{ whiteSpace: 'nowrap' }}>{formatMonth(month)}</td>
+                  <td className="nowrap">{formatMonth(month)}</td>
                   {[0, 1, 2, 3].map((i) => (
                     <td key={i}>
                       <input className="cell" type="number" min="0" max="31"
@@ -148,7 +150,6 @@ export function SpanwiseGrid() {
           </tfoot>
         </table>
       </div>
-      {saver.error && <p className="notice">{saver.error}</p>}
     </section>
   );
 }

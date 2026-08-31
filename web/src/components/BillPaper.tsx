@@ -38,16 +38,16 @@ export function BillPaper() {
 
   return (
     <div className="paper">
-      <header style={{ borderBottom: '2px solid var(--ink)', paddingBottom: 16, marginBottom: 4 }}>
-        <h2 style={{ fontSize: 20 }}>Price escalation under Clause-45</h2>
-        <p className="meta" style={{ margin: '4px 0 18px' }}>
+      <header className="bill-head">
+        <h2>Price escalation under Clause-45</h2>
+        <p className="meta">
           Calculation for the period on which escalation is payable.
         </p>
-        <div className="grid-fields" style={{ fontSize: 14 }}>
+        <div className="bill-fields">
           <Field label="Agreement no.">{contract.agreementNo || '—'}</Field>
           <Field label="Contractor">{contract.contractor || '—'}</Field>
           <Field label="Work order">{contract.woNoDate || '—'}</Field>
-          <div style={{ gridColumn: '1 / -1' }}>
+          <div className="wide">
             <Field label="Work">{contract.workName || '—'}</Field>
           </div>
           <Field label="Bid submitted">{formatDate(contract.bidDate)}</Field>
@@ -55,7 +55,7 @@ export function BillPaper() {
           <Field label="Stipulated completion">{formatDate(contract.stipulatedCompletion)}</Field>
           <Field label="Actual completion">{formatDate(contract.actualCompletion)}</Field>
           <Field label="Work done amount">
-            <span className="num" style={{ textAlign: 'left' }}>₹{formatRupees(contract.workDoneAmount)}</span>
+            <span className="num num--left">₹{formatRupees(contract.workDoneAmount)}</span>
           </Field>
         </div>
       </header>
@@ -75,13 +75,12 @@ export function BillPaper() {
                 {' '}({baseText(key)})
               </span>
             </div>
-            <div className="formula-block" style={{ marginTop: 10 }}>
+            <div className="formula-block stack-sm">
               {lines.map((l) => <FormulaStrip key={`${l.component}-${l.period}`} line={l} />)}
             </div>
-            <div className="spread" style={{ paddingTop: 10 }}>
-              <span style={{ fontWeight: 600 }}>Total, {COMPONENT_LABELS[key]}</span>
-              <span className={`num${total < 0 ? ' num--negative' : ''}`}
-                    style={{ fontWeight: 600, fontSize: 15 }}>
+            <div className="spread stack-sm">
+              <span className="strong">Total, {COMPONENT_LABELS[key]}</span>
+              <span className={`num strong${total < 0 ? ' num--negative' : ''}`}>
                 {formatRupees(total)}
               </span>
             </div>
@@ -89,36 +88,30 @@ export function BillPaper() {
         );
       })}
 
-      <section style={{ marginTop: 26, borderTop: '2px solid var(--ink)', paddingTop: 16 }}
-               className="component">
-        <div className="spread">
+      <section className="component bill-total">
+        <div className="bill-total__line">
           <span>Grand total — Labour + Material + Cement + Steel + POL + Bitumen</span>
           <span className={`num${calculation.grandTotal < 0 ? ' num--negative' : ''}`}>
             {formatRupees(calculation.grandTotal)}
           </span>
         </div>
-        <div className="spread" style={{ marginTop: 6 }}>
+        <div className="bill-total__line">
           <span>Less escalation already paid</span>
           <span className="num">{formatRupees(calculation.alreadyPaid)}</span>
         </div>
-        <div className="spread"
-             style={{ borderTop: '1px solid var(--rule-strong)', marginTop: 14, paddingTop: 14 }}>
-          <span style={{ fontWeight: 600, fontSize: 16 }}>
+        <div className="bill-total__final">
+          <span>
             {provisional ? 'Provisional amount of this bill' : 'Amount of this price escalation bill'}
           </span>
           <span className="payable">₹{formatRupees(calculation.payable)}</span>
         </div>
-        <p style={{ margin: '4px 0 0', textAlign: 'right', fontStyle: 'italic', fontSize: 14 }}>
-          {rupeesInWords(calculation.payable)}
-        </p>
+        <p className="bill-words">{rupeesInWords(calculation.payable)}</p>
       </section>
 
-      <section style={{ marginTop: 64, textAlign: 'right' }} className="component">
-        <div style={{ display: 'inline-block', textAlign: 'center' }}>
-          <div style={{ borderTop: '1px solid var(--ink)', paddingTop: 6, minWidth: 250 }}>
-            {contract.contractor || '—'}
-          </div>
-          <div className="label" style={{ marginTop: 2 }}>Contractor</div>
+      <section className="component sign">
+        <div className="sign__block">
+          <div className="sign__rule">{contract.contractor || '—'}</div>
+          <div className="label">Contractor</div>
         </div>
       </section>
     </div>

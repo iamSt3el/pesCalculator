@@ -508,24 +508,93 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
 .f-paren { color: var(--ink-faint); padding-left: 4px; }
 .f-amount { text-align: right; font-weight: 600; padding-left: 22px; }
 
+/* ---- rhythm -------------------------------------------------------------- */
+/* Every margin in the TSX resolves to one of these. */
+.section { margin-top: var(--s6); }
+.stack-sm { margin-top: var(--s3); }
+.stack-md { margin-top: var(--s5); }
+.stack-lg { margin-top: var(--s6); }
+.strong { font-weight: 600; }
+.nowrap { white-space: nowrap; }
+.num--left { text-align: left; }
+.grow { flex: 1; }
+
 /* ---- the report ---------------------------------------------------------- */
 .report { font-family: var(--serif); }
-.report .paper {
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  padding: 34px 38px;
-}
-.report h2 { font-family: var(--serif); font-size: 17px; font-weight: 600; margin: 0; }
-.report .component { padding: 20px 0; border-bottom: 1px solid var(--rule); }
+/* The bill is a sheet of paper, not a card: no border, no radius. */
+.report .paper { background: var(--surface); padding: 0; }
+.report h2 { font-family: var(--serif); font-size: var(--t-h2); font-weight: 600; margin: 0; }
+.report .component { padding: var(--s5) 0; border-bottom: 1px solid var(--rule); }
 .report .component:last-of-type { border-bottom: none; }
-.report .meta { font-family: var(--sans); font-size: 12px; color: var(--ink-muted); }
-.report .label { font-family: var(--sans); font-size: 11px; letter-spacing: 0.05em;
-  text-transform: uppercase; color: var(--ink-faint); }
+.report .meta { font-family: var(--sans); font-size: var(--t-small); color: var(--ink-muted); }
+.report .label {
+  font-family: var(--sans); font-size: var(--t-micro); letter-spacing: 0.13em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+
+.bill-head { border-bottom: 2px solid var(--rule-strong); padding-bottom: var(--s4); margin-bottom: var(--s1); }
+.bill-head h2 { font-size: 20px; }
+.bill-head .meta { margin: var(--s1) 0 var(--s5); }
+/* Fixed three columns, so the particulars land in the same place on every
+   bill. An auto-fit grid reflowed them differently as the window changed. */
+.bill-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3) var(--s5); font-size: var(--t-body); }
+.bill-fields .wide { grid-column: 1 / -1; }
+
+.bill-total { margin-top: var(--s5); border-top: 2px solid var(--rule-strong); padding-top: var(--s4); }
+.bill-total__line { display: flex; justify-content: space-between; gap: var(--s4); padding: 3px 0; }
+.bill-total__final {
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--s4);
+  border-top: 1px solid var(--rule-strong); margin-top: var(--s3); padding-top: var(--s3);
+}
+.bill-total__final > span:first-child { font-weight: 600; font-size: var(--t-h2); }
 .payable {
-  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  font-family: var(--serif); font-variant-numeric: tabular-nums;
   font-size: 32px; font-weight: 600; color: var(--ink); letter-spacing: -0.02em;
 }
+.bill-words { margin: var(--s1) 0 0; text-align: right; font-style: italic; font-size: var(--t-body); }
+
+.sign { margin-top: var(--s8); text-align: right; break-inside: avoid; }
+.sign__block { display: inline-block; text-align: center; }
+.sign__rule { border-top: 1px solid var(--ink); padding-top: var(--s1); min-width: 250px; }
+
+/**
+ * A hand-set figure. Marked rather than coloured: a dagger survives a
+ * photocopy and a monochrome printer, and an accent does not.
+ */
+.overridden { font-style: italic; }
+.overridden::after { content: ' \2020'; font-style: normal; color: var(--ink-muted); }
+.footnote { font-family: var(--sans); font-size: var(--t-small); color: var(--ink-muted); margin: var(--s2) 0 0; }
+
+/* A quarter's base tag, beside its heading. */
+.quarter { margin-bottom: var(--s4); }
+.tag {
+  font-family: var(--sans); font-size: var(--t-micro); font-weight: 600;
+  letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-muted);
+  margin-left: var(--s2);
+}
+
+
+/* ---- column widths ------------------------------------------------------- */
+/* Table columns need explicit widths so figures do not jump as values change. */
+th.col-xs   { width: 86px; }
+th.col-sm   { width: 110px; }
+th.col-md   { width: 140px; }
+th.col-lg   { width: 230px; }
+
+/* ---- small utilities ----------------------------------------------------- */
+.flush { margin: 0; }
+.flush-bottom { margin-bottom: 0; }
+.spread--center { align-items: center; }
+.spread--baseline { align-items: baseline; }
+.self-end { align-self: flex-end; }
+.tight { font-weight: 400; }
+.divider { margin-top: var(--s4); padding-top: var(--s4); border-top: 1px solid var(--rule); }
+.paste-area { width: 100%; font-family: var(--mono); font-size: var(--t-body); }
+.errors { margin: var(--s2) 0 0; padding-left: var(--s5); }
+.quarter-cell { min-width: 150px; }
+.quarter-cell .num { text-align: left; font-size: var(--t-h2); }
+.title--sub { margin-top: var(--s1); }
+.bar { margin-bottom: var(--s5); }
 
 /* ---- motion -------------------------------------------------------------- */
 /* The one animation: a derived cell flashes when an upstream edit reaches it. */

@@ -17,7 +17,7 @@ export function IndexAveragePage() {
       <div className="spread">
         <div>
           <span className="derived-mark">Computed</span>
-          <h1 className="title" style={{ marginTop: 4 }}>Index Average</h1>
+          <h1 className="title title--sub">Index Average</h1>
           <p className="subtitle">
             Derived from the rates chart. Nothing here is entered by hand.
           </p>

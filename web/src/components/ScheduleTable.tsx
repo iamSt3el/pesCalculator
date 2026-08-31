@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api, type AdjustmentRow } from '../api.ts';
-import { useContract } from '../ContractLayout.tsx';
+import { useContract, useReportSave } from '../ContractLayout.tsx';
 import { useGridKeys } from '../grid.ts';
 import { formatMonth, formatQuarter, formatRupees } from '../format.ts';
 import { useDebouncedSave, useSettle } from '../hooks.ts';
@@ -21,6 +21,8 @@ export function ScheduleTable() {
     await api.putPayments(bundle.contract.id, next.filter((r) => r.adjustment !== 0));
     await reload();
   });
+
+  useReportSave('schedule', saver.saving, saver.error);
 
   const { grid, onKeyDown } = useGridKeys(calculation?.schedule.rows.length ?? 0, 1);
 
@@ -43,7 +45,7 @@ export function ScheduleTable() {
   const drift = calculation.schedule.total - bundle.contract.workDoneAmount;
 
   return (
-    <section style={{ marginTop: 28 }}>
+    <section className="section">
       <div className="section-head"><h2>Schedule of payment</h2></div>
       <p className="subtitle">
         Computed from the days entered on Main Data, allocated so the months total the work done
@@ -56,14 +58,14 @@ export function ScheduleTable() {
             <tr>
               <th>Month</th>
               <th className="r">Computed</th>
-              <th className="r" style={{ width: 150 }}>Adjustment</th>
+              <th className="r col-md">Adjustment</th>
               <th className="r">Payment</th>
             </tr>
           </thead>
           <tbody ref={grid}>
             {calculation.schedule.rows.map((row, i) => (
               <tr key={row.month}>
-                <td style={{ whiteSpace: 'nowrap' }}>{formatMonth(row.month)}</td>
+                <td className="nowrap">{formatMonth(row.month)}</td>
                 <td className="r"><Computed value={row.computed} /></td>
                 <td>
                   <input className="cell" type="number" step="0.01"
@@ -93,18 +95,17 @@ export function ScheduleTable() {
         </p>
       )}
 
-      <div className="panel" style={{ marginTop: 12 }}>
+      <div className="panel stack-sm">
         <p className="eyebrow">By quarter</p>
         <div className="row">
           {Object.entries(calculation.schedule.byQuarter).sort().map(([q, v]) => (
-            <div key={q} style={{ minWidth: 150 }}>
+            <div key={q} className="quarter-cell">
               <div className="hint">{formatQuarter(q)}</div>
-              <div className="num" style={{ textAlign: 'left', fontSize: 16 }}>{formatRupees(v)}</div>
+              <div className="num">{formatRupees(v)}</div>
             </div>
           ))}
         </div>
       </div>
-      {saver.error && <p className="notice">{saver.error}</p>}
     </section>
   );
 }
