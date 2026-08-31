@@ -18,7 +18,7 @@ export function formatIndex(n: number | null | undefined, dp = 4): string {
 
 /**
  * Five of the six components are dimensionless indices, written to `dp`.
- * Bitumen VG-10 is not an index at all — it is a rupee rate per tonne, so it is
+ * Bitumen is not an index at all — it is a rupee rate per tonne, so it is
  * written as money: grouped the Indian way, to the paise.
  *
  * Two decimals throughout. The engine averages a quarter as an exact `sum / 3`

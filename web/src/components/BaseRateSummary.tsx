@@ -28,7 +28,9 @@ export function BaseRateSummary({ rows, onOverride }: Props) {
     if (base.rule === 'quarter_average') return `Average of ${formatQuarter(calculation!.baseQuarter)}`;
     const month = base.sourceMonths[0];
     if (base.rule === 'bid_month') return `${month ? formatMonth(month) : '—'}, the bid month`;
-    return `${month ? formatMonth(month) : '—'}, ${contract.bitumenOffsetDays} days before the bid`;
+    const series = base.bitumenSeries === 'second' ? 'Bitumen 2nd' : 'Bitumen 1st';
+    return `${month ? formatMonth(month) : '—'} ${series}, `
+      + `${contract.bitumenOffsetDays} days before the bid`;
   };
 
   return (

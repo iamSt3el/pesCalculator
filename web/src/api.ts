@@ -64,7 +64,7 @@ export const COMPONENT_KEYS: ComponentKey[] =
 
 export const COMPONENT_LABELS: Record<ComponentKey, string> = {
   labour: 'Labour', material: 'Material (All Commodities)', cement: 'Cement',
-  steel: 'Steel', pol: 'POL', bitumen: 'Bitumen VG-10',
+  steel: 'Steel', pol: 'POL', bitumen: 'Bitumen',
 };
 
 export interface RateRow {
@@ -108,6 +108,7 @@ export interface EscalationLine {
 
 export interface ResolvedBase {
   key: ComponentKey; rule: BaseRule; sourceMonths: string[];
+  bitumenSeries: 'first' | 'second' | null;
   value: number | null; overridden: boolean;
 }
 

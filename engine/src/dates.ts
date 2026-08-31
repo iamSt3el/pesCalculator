@@ -16,6 +16,10 @@ export function monthOfDate(d: IsoDate): Month {
   return d.slice(0, 7);
 }
 
+export function dayOfMonth(d: IsoDate): number {
+  return Number(d.slice(8, 10));
+}
+
 export function addDays(d: IsoDate, n: number): IsoDate {
   return iso(utc(d) + n * DAY_MS);
 }

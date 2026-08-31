@@ -26,7 +26,7 @@ export function PasteBox({ onDone }: { onDone: () => void }) {
                 style={{ width: '100%', fontFamily: 'var(--mono)', fontSize: 13 }}
                 placeholder={'2023-07\t130.0\t99.1\t98.1\t91.5\t89.1\t38472\t36972'} />
       <p className="hint" style={{ margin: '6px 0 10px' }}>
-        Column order: Month · Labour · Material · Cement · Steel · POL · Bitumen VG-10 · Bitumen (2nd series)
+        Column order: Month · Labour · Material · Cement · Steel · POL · Bitumen 1st · Bitumen 2nd
       </p>
       <button type="submit" disabled={busy || !text.trim()}>
         {busy ? 'Adding…' : 'Add months'}

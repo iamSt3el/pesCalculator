@@ -21,7 +21,7 @@ const num = (cell: string | undefined): number | null => {
 
 /**
  * Reads a tab-separated block copied out of Excel. Columns, in order:
- * Month, Labour, Material, Cement, Steel, POL, Bitumen G, Bitumen H.
+ * Month, Labour, Material, Cement, Steel, POL, Bitumen 1st, Bitumen 2nd.
  * A leading header row is skipped; unreadable months are reported, not dropped.
  */
 export function parsePastedRates(text: string): { rows: RateRow[]; errors: string[] } {

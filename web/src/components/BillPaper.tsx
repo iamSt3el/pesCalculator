@@ -31,9 +31,9 @@ export function BillPaper() {
     if (base.rule === 'quarter_average') return `average of ${formatQuarter(calculation.baseQuarter)}`;
     const m = base.sourceMonths[0];
     if (!m) return '—';
-    return base.rule === 'bid_month'
-      ? `${formatMonth(m)}, the bid month`
-      : `${formatMonth(m)}, ${contract.bitumenOffsetDays} days before the bid`;
+    if (base.rule === 'bid_month') return `${formatMonth(m)}, the bid month`;
+    const series = base.bitumenSeries === 'second' ? 'Bitumen 2nd' : 'Bitumen 1st';
+    return `${formatMonth(m)} ${series}, ${contract.bitumenOffsetDays} days before the bid`;
   };
 
   return (

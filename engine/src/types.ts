@@ -18,8 +18,9 @@ export interface RateRow {
   cement: number | null;
   steel: number | null;
   pol: number | null;
+  /** Bitumen 1st - the rate published for the first half of the month. */
   bitumenG: number | null;
-  /** Second bitumen series, recorded but unused in any calculation. */
+  /** Bitumen 2nd - the rate published for the second half of the month. */
   bitumenH: number | null;
 }
 

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildRateIndex, quarterMean, monthValue, baseQuarterOf,
-  resolveBaseRates, quartersUnderConsideration, rateFieldFor,
+  resolveBaseRates, quartersUnderConsideration, rateFieldFor, bitumenSeriesOf,
 } from '../src/indices.ts';
 import { computeSpans, buildSchedule } from '../src/spans.ts';
 import { RATES_2023_24, CONTRACT_168, COMPONENTS_168, PROGRESS_168 } from './fixtures/agreement168.ts';
@@ -12,6 +12,13 @@ const rates = buildRateIndex(RATES_2023_24);
 test('rateFieldFor maps the bitumen component to the G series', () => {
   assert.equal(rateFieldFor('bitumen'), 'bitumenG');
   assert.equal(rateFieldFor('labour'), 'labour');
+});
+
+test('bitumenSeriesOf splits the month at the 15th', () => {
+  assert.equal(bitumenSeriesOf('2023-08-01'), 'first');
+  assert.equal(bitumenSeriesOf('2023-08-15'), 'first');
+  assert.equal(bitumenSeriesOf('2023-08-16'), 'second');
+  assert.equal(bitumenSeriesOf('2023-08-31'), 'second');
 });
 
 test('quarterMean averages the three months of a quarter', () => {
@@ -51,9 +58,30 @@ test('resolveBaseRates applies a different rule per component', () => {
   // POL's base is the bid month alone, not the quarter average of 89.9.
   assert.equal(bases.get('pol')!.value, 90.8);
   assert.deepEqual(bases.get('pol')!.sourceMonths, ['2023-09']);
-  // Bitumen's base is the month of (bid date - 28 days) = Aug 2023.
+  // Bitumen's base is the month of (bid date - 28 days) = 15 Aug 2023, so the
+  // first half of the month, which reads Bitumen 1st.
   assert.equal(bases.get('bitumen')!.value, 38882);
   assert.deepEqual(bases.get('bitumen')!.sourceMonths, ['2023-08']);
+  assert.equal(bases.get('bitumen')!.bitumenSeries, 'first');
+  assert.equal(bases.get('labour')!.bitumenSeries, null);
+});
+
+test('a bitumen offset date past the 15th takes its base from Bitumen 2nd', () => {
+  // 2023-09-20 less 28 days is 2023-08-23, the second half of August.
+  const withH = buildRateIndex(RATES_2023_24.map((r) =>
+    r.month === '2023-08' ? { ...r, bitumenH: 39500 } : r));
+  const { bases } = resolveBaseRates(
+    withH, { ...CONTRACT_168, bidDate: '2023-09-20' }, COMPONENTS_168);
+  assert.equal(bases.get('bitumen')!.bitumenSeries, 'second');
+  assert.equal(bases.get('bitumen')!.value, 39500);
+  assert.deepEqual(bases.get('bitumen')!.sourceMonths, ['2023-08']);
+});
+
+test('a missing Bitumen 2nd rate is reported rather than falling back to the 1st', () => {
+  const { bases, missing } = resolveBaseRates(
+    rates, { ...CONTRACT_168, bidDate: '2023-09-20' }, COMPONENTS_168);
+  assert.equal(bases.get('bitumen')!.value, null);
+  assert.ok(missing.includes('2023-08'));
 });
 
 test('resolveBaseRates honours an operator override', () => {

@@ -78,9 +78,9 @@ POL to Bitumen. The application stores the resulting values (8.11, 28.84) and do
 not model the transfer.
 
 **Entered by hand — Rates Chart:** the published index for each month. Columns
-Labour, Material (All Commodities), Cement, Steel, POL, Bitumen VG-10 rate.
-Column H holds a second bitumen series (annotated "Panipat" for early rows) which
-is recorded but not used in any calculation.
+Labour, Material (All Commodities), Cement, Steel, POL, Bitumen 1st. Column H
+holds the second bitumen series (Bitumen 2nd, annotated "Panipat" for early
+rows), the rate published for the second half of the month.
 
 **Everything else is derived.** Index Average, Base Rate (except the payment
 schedule adjustments), and Calculation PES contain no independent inputs.
@@ -128,7 +128,12 @@ Base index per component, each rule overridable per contract:
 | POL | index of the **month containing the bid date** | 90.8 (Sep-2023) |
 | Bitumen | rate of the **month containing (bid date − offset days)** | 38,882 (Aug-2023) |
 
-The offset defaults to 28 days and is a per-contract field.
+The offset defaults to 28 days and is a per-contract field. Bitumen is published
+twice a month, so the base also picks a series by the day the offset date lands
+on: days 1–15 read **Bitumen 1st** (column G), days 16 onward read **Bitumen
+2nd** (column H). A base whose series has no rate for that month is reported as
+missing rather than falling back to the other series. The *current* bitumen index
+is unaffected — it stays the monthly Bitumen 1st figure.
 
 **Asymmetry to preserve:** POL's *base* is a single month, but POL's *current*
 index is still the quarter mean, exactly as `'Index Average'!F15/F19/F23` feed
