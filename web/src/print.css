@@ -47,6 +47,7 @@
   }
 
   .shell__nav, button, .no-print, .running-head { display: none !important; }
+  .print-only { display: inline !important; }
 
   /**
    * Sticky is a screen affordance. Left in place across a page break it
@@ -108,16 +109,25 @@
      honour it emit a trailing blank page. */
   .sheet { break-after: page; }
   /**
-   * One sheet, one page. The padding is the page margin and is inside the box,
-   * so the whole thing measures 288mm against A4's 297mm — deliberately 9mm
-   * short. An exact 297mm rounds up on any sub-pixel and spills a blank page,
-   * which is what "6 sheets of paper" for a three-sheet bill looks like.
+   * A sheet is a section, not a page. Agreement 168 proves the two are not the
+   * same: Base Rate just overruns A4, and the Calculation needs two pages for
+   * six components.
+   *
+   * So no min-height. Forcing one pushed the foot of any over-long sheet onto
+   * a page of its own — a three-sheet bill printed as six pages, three of them
+   * blank but for a footer. The foot now sits directly under the content it
+   * closes, which is what a rule at the end of a section is for.
+   *
+   * The padding is the page margin, inside the box, because @page must stay at
+   * zero: Chrome draws its URL and date strip in the page margin, and with no
+   * margin there is nowhere for it to go.
    */
   .sheet {
     box-sizing: border-box;
-    min-height: 288mm;
     padding: 16mm 14mm;
   }
+  /* The body no longer stretches to push the foot down the page. */
+  .sheet__body { flex: none; }
   .sheet--last { break-after: auto; }
   .sheet + .sheet { margin-top: 0; padding-top: 0; border-top: none; }
   .sheet__title { color: #000; }

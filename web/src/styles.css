@@ -596,6 +596,8 @@ th.col-md   { width: 140px; }
 th.col-lg   { width: 230px; }
 
 /* ---- small utilities ----------------------------------------------------- */
+/* Shown only on paper. Its partner carries .no-print. */
+.print-only { display: none; }
 .flush { margin: 0; }
 .flush-bottom { margin-bottom: 0; }
 .spread--center { align-items: center; }

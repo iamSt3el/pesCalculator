@@ -68,10 +68,13 @@ export function ScheduleTable() {
                 <td className="nowrap">{formatMonth(row.month)}</td>
                 <td className="r"><Computed value={row.computed} /></td>
                 <td>
-                  <input className="cell" type="number" step="0.01"
+                  <input className="cell no-print" type="number" step="0.01"
                          data-r={i} data-c={0} onKeyDown={onKeyDown}
                          value={adjustmentFor(row.month) || ''} placeholder="0"
                          onChange={(e) => setAdjustment(row.month, toPaise(e.target.value))} />
+                  {/* Paper records the figure, not the means of changing it —
+                      and records it grouped, like every other column. */}
+                  <span className="print-only num">{formatRupees(adjustmentFor(row.month))}</span>
                 </td>
                 <td className={`num${row.payment < 0 ? ' num--negative' : ''}`}>{formatRupees(row.payment)}</td>
               </tr>
