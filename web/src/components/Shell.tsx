@@ -5,6 +5,7 @@ import { formatRupees } from '../format.ts';
 import { blockedStages, type StageKey } from '../problems.ts';
 import type { StageReadiness } from '../readiness.ts';
 import { ProblemList } from './ProblemList.tsx';
+import { RunningHead } from './RunningHead.tsx';
 import { ThemeToggle } from './ThemeToggle.tsx';
 
 const STAGES: ReadonlyArray<{ to: string; label: string; key: StageKey }> = [
@@ -21,6 +22,9 @@ interface Props {
   agreementNo: string;
   contractor: string;
   calculation: Calculation | null;
+  /** Reported by whichever stage owns a saver; shown in the running head. */
+  saving?: boolean;
+  error?: string | null;
   onSignOut: () => void;
   children: ReactNode;
 }
@@ -52,7 +56,9 @@ function RunningTotal({ calculation }: { calculation: Calculation | null }) {
   );
 }
 
-export function Shell({ readiness, agreementNo, contractor, calculation, onSignOut, children }: Props) {
+export function Shell({
+  readiness, agreementNo, contractor, calculation, saving, error, onSignOut, children,
+}: Props) {
   const { id } = useParams();
   const blocked = blockedStages(calculation?.problems ?? []);
 
@@ -61,7 +67,7 @@ export function Shell({ readiness, agreementNo, contractor, calculation, onSignO
       <nav className="shell__nav">
         <div>
           <NavLink to="/" className="rail-back">← All contracts</NavLink>
-          <div className="rail-title" style={{ marginTop: 12 }}>{agreementNo || 'Untitled contract'}</div>
+          <div className="rail-title">{agreementNo || 'Untitled contract'}</div>
           {contractor && <div className="rail-sub">{contractor}</div>}
         </div>
 
@@ -88,13 +94,23 @@ export function Shell({ readiness, agreementNo, contractor, calculation, onSignO
 
         <div className="rail-foot no-print">
           <NavLink to="/profile" className="rail-back">Your account</NavLink>
-          <div className="row" style={{ gap: 8 }}>
+          <div className="row row--tight">
             <ThemeToggle />
             <button className="ghost small" onClick={onSignOut}>Sign out</button>
           </div>
         </div>
       </nav>
-      <main className="shell__main">{children}</main>
+      <main className="shell__main">
+        <RunningHead
+          identity={agreementNo || 'Untitled contract'}
+          sub={contractor}
+          saving={saving}
+          error={error}
+          payable={calculation ? `₹${formatRupees(calculation.payable)}` : null}
+          problemCount={calculation?.problems.length ?? 0}
+        />
+        {children}
+      </main>
     </div>
   );
 }
