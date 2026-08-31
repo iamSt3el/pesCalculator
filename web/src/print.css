@@ -11,6 +11,28 @@
 }
 
 /**
+ * A provisional bill, marked so it cannot be mistaken for a final one. Until
+ * now the only difference was one word in a label.
+ *
+ * Ink on paper: no tint, no background graphic. A band survives a browser with
+ * "Print backgrounds" unticked and survives a photocopier, and a watermark
+ * does neither — on a cheap mono laser a grey wash dithers into something that
+ * muddies the figures behind it.
+ */
+.provisional-band {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: var(--s4); flex-wrap: wrap;
+  border: 2px solid var(--rule-strong);
+  padding: var(--s2) var(--s3); margin: 0 0 var(--s4);
+  font-family: var(--sans); break-inside: avoid;
+}
+.provisional-band__word {
+  font-weight: 700; font-size: var(--t-small);
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink);
+}
+.provisional-band__detail { font-size: var(--t-small); color: var(--ink); }
+
+/**
  * Page furniture. `@page { margin: 0 }` below suppresses the browser's own
  * header strip — deliberately, so Chrome cannot draw a URL across the sheet —
  * and until now nothing replaced it: three sheets came off the printer with no
@@ -132,6 +154,8 @@
   .sheet + .sheet { margin-top: 0; padding-top: 0; border-top: none; }
   .sheet__title { color: #000; }
   .sheet-head, .sheet-foot { color: #333; }
+  .provisional-band { border-color: #000; }
+  .provisional-band__word, .provisional-band__detail { color: #000; }
   .sheet-head { border-bottom-color: #999; }
   .sheet-foot { border-top-color: #999; }
   /* A scrolling box clips its overflow on paper — let the tables run on. */

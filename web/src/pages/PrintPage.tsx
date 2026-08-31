@@ -2,6 +2,7 @@ import { BaseRateSummary } from '../components/BaseRateSummary.tsx';
 import { BillPaper } from '../components/BillPaper.tsx';
 import { IndexAverageTables } from '../components/IndexAverageTables.tsx';
 import { ScheduleTable } from '../components/ScheduleTable.tsx';
+import { ProvisionalBand } from '../components/ProvisionalBand.tsx';
 import { SheetFurniture } from '../components/SheetFurniture.tsx';
 import { useContract } from '../ContractLayout.tsx';
 import { formatRupees } from '../format.ts';
@@ -57,6 +58,7 @@ export function PrintPage() {
       )}
 
       <SheetFurniture index={0} total={SHEETS} {...marks}>
+        <ProvisionalBand count={calculation.problems.length} />
         <h2 className="sheet__title">Index Average</h2>
         <IndexAverageTables />
       </SheetFurniture>
@@ -68,7 +70,7 @@ export function PrintPage() {
       </SheetFurniture>
 
       <SheetFurniture index={2} total={SHEETS} last {...marks}>
-        <BillPaper />
+        <BillPaper showBand={false} />
       </SheetFurniture>
     </div>
   );

@@ -1,5 +1,6 @@
 import { COMPONENT_KEYS, COMPONENT_LABELS, type ComponentKey } from '../api.ts';
 import { FormulaStrip } from './FormulaStrip.tsx';
+import { ProvisionalBand } from './ProvisionalBand.tsx';
 import { useContract } from '../ContractLayout.tsx';
 import {
   formatComponentIndex, formatDate, formatMonth, formatQuarter, formatRupees, rupeesInWords,
@@ -18,7 +19,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
  * The bill itself — every line in full, so the figure can be checked by hand.
  * Rendered both as the Calculation stage and as the last page of the print set.
  */
-export function BillPaper() {
+/**
+ * `showBand` is false only on the last sheet of the printed set, where the
+ * set's own band already sits on sheet 1 and a second would be noise.
+ */
+export function BillPaper({ showBand = true }: { showBand?: boolean } = {}) {
   const { bundle, calculation } = useContract();
   const { contract } = bundle;
   if (!calculation) return null;
@@ -38,6 +43,7 @@ export function BillPaper() {
 
   return (
     <div className="paper">
+      {showBand && <ProvisionalBand count={calculation.problems.length} />}
       <header className="bill-head">
         <h2>Price escalation under Clause-45</h2>
         <p className="meta">
