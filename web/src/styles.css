@@ -5,47 +5,69 @@
  * direction. Nothing outside these blocks may name a literal colour, or it
  * survives into the theme it was not written for.
  *
- * --stamp means one thing only: something you can interact with. It used to be
- * the colour of row hover, the running total, the payable and the settle flash
- * as well, which left nothing on the page looking more important than anything
- * else. State has its own tokens now.
+ * --accent is ink. Emphasis in a ledger is weight and rule, not hue, so the
+ * accent is the darkest thing available and colour is left free to mean
+ * something: --ok settled, --warn provisional, --recovery negative.
+ *
+ * Two rule weights, and only two. --rule is a hairline and marks repetition;
+ * --rule-strong is ink and marks structure. A third weight, a radius above
+ * 2px, or a shadow is a defect — that discipline is what makes this read as a
+ * ledger rather than as cards.
  */
 :root {
   color-scheme: light;
 
-  --paper: #EAEEF3;
-  --surface: #FFFFFF;
+  --paper: #FBFAF7;
+  /* Equal to --paper on purpose: the ledger draws no cards. */
+  --surface: #FBFAF7;
   /* Derived surfaces: a stage that computes rather than asks sits on this. */
-  --sunk: #F5F8FA;
-  --ink: #101720;
-  --ink-muted: #55606E;
-  --ink-faint: #667382;
-  --rule: #DEE4EB;
+  --sunk: #F3F1EA;
+  --ink: #1B1A17;
+  --ink-muted: #6B6555;
+  --ink-faint: #A8A091;
+  --rule: #EAE6DB;
   /* The zebra stripe, flattened against --surface. Opaque on purpose: the
      first column goes sticky on a narrow screen, and a translucent stripe
      would let the cells scrolling beneath it show through. */
-  --stripe: #F8FAFB;
-  --rule-strong: #BFC8D3;
-  --hover: #F1F4F8;
+  --stripe: #F7F5EE;
+  /* Ink. A structural rule is the same colour as the text it separates. */
+  --rule-strong: #1B1A17;
+  --hover: #F0EDE4;
 
-  --stamp: #4338CA;
-  --stamp-wash: #EDECFB;
-  /* Text laid over --stamp. It flips with the accent, which is dark on a light
-     ground and light on a dark one - white would vanish into the dark theme. */
-  --on-stamp: #FFFFFF;
+  --accent: #1B1A17;
+  /* Text laid over --accent. It flips with the accent, which is dark on a
+     light ground and light on a dark one. */
+  --on-accent: #FBFAF7;
 
-  --ok: #126B4C;
-  --ok-wash: #E2F1EA;
-  --warn: #8A5300;
-  --warn-wash: #FAEFD9;
-  --recovery: #A02218;
-  --recovery-wash: #FBEAE7;
+  --ok: #1F5C3D;
+  --ok-wash: #E6EFE7;
+  --warn: #7A4E10;
+  --warn-wash: #F6EDD9;
+  --recovery: #8E2A1E;
+  --recovery-wash: #F6E6E2;
 
   --sans: 'IBM Plex Sans', system-ui, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
   --serif: 'IBM Plex Serif', Georgia, serif;
 
-  --measure: 1120px;
+  /* Spacing. Every margin and padding in the app resolves to one of these.
+     Their absence is why the rhythm drifted from page to page. */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
+
+  /* Type. Table figures deliberately do not shrink: the complaint was that the
+     app is cramped and hard to read, and buying whitespace by shrinking the
+     numbers answers the wrong half of it. Room comes from row height and
+     gutters instead. */
+  --t-micro: 10px;
+  --t-small: 12px;
+  --t-body: 14px;
+  --t-base: 15.5px;
+  --t-h2: 18px;
+  --t-h1: 26px;
+
+  /* The rates chart is seven numeric columns and scrolled sideways at 1120. */
+  --measure: 1240px;
 }
 
 /* The un-stamped default: most readers never set a theme, so the system
@@ -54,54 +76,52 @@
   :root:not([data-theme='light']) {
     color-scheme: dark;
 
-    --paper: #0D1116;
-    --surface: #151B22;
-    --sunk: #1A222A;
-    --ink: #E2E8EF;
-    --ink-muted: #99A5B2;
-    --ink-faint: #7D8A97;
-    --rule: #252D37;
-    --stripe: #191F27;
-    --rule-strong: #38424E;
-    --hover: #1E262F;
+    --paper: #1A1815;
+    --surface: #1A1815;
+    --sunk: #211F1B;
+    --ink: #EDE9DF;
+    --ink-muted: #A9A192;
+    --ink-faint: #7D766A;
+    --rule: #2E2A24;
+    --stripe: #1E1C19;
+    --rule-strong: #EDE9DF;
+    --hover: #252220;
 
-    --stamp: #A29CF7;
-    --stamp-wash: #211F3E;
-    --on-stamp: #16123A;
+    --accent: #EDE9DF;
+    --on-accent: #1A1815;
 
-    --ok: #5CBE95;
-    --ok-wash: #122A21;
-    --warn: #DDA84A;
-    --warn-wash: #2B2211;
-    --recovery: #EC8A80;
-    --recovery-wash: #2D1715;
+    --ok: #7FBE9B;
+    --ok-wash: #16241C;
+    --warn: #D7A45C;
+    --warn-wash: #2A2114;
+    --recovery: #E08A7E;
+    --recovery-wash: #2B1714;
   }
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
 
-  --paper: #0D1116;
-  --surface: #151B22;
-  --sunk: #1A222A;
-  --ink: #E2E8EF;
-  --ink-muted: #99A5B2;
-  --ink-faint: #7D8A97;
-  --rule: #252D37;
-  --stripe: #191F27;
-  --rule-strong: #38424E;
-  --hover: #1E262F;
+  --paper: #1A1815;
+  --surface: #1A1815;
+  --sunk: #211F1B;
+  --ink: #EDE9DF;
+  --ink-muted: #A9A192;
+  --ink-faint: #7D766A;
+  --rule: #2E2A24;
+  --stripe: #1E1C19;
+  --rule-strong: #EDE9DF;
+  --hover: #252220;
 
-  --stamp: #A29CF7;
-  --stamp-wash: #211F3E;
-  --on-stamp: #16123A;
+  --accent: #EDE9DF;
+  --on-accent: #1A1815;
 
-  --ok: #5CBE95;
-  --ok-wash: #122A21;
-  --warn: #DDA84A;
-  --warn-wash: #2B2211;
-  --recovery: #EC8A80;
-  --recovery-wash: #2D1715;
+  --ok: #7FBE9B;
+  --ok-wash: #16241C;
+  --warn: #D7A45C;
+  --warn-wash: #2A2114;
+  --recovery: #E08A7E;
+  --recovery-wash: #2B1714;
 }
 
 * { box-sizing: border-box; }
@@ -110,14 +130,14 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font: 15px/1.55 var(--sans);
+  font: var(--t-base)/1.55 var(--sans);
   -webkit-font-smoothing: antialiased;
 }
 
 /* ---- type scale ---------------------------------------------------------- */
 .title {
   font-family: var(--serif);
-  font-size: 30px;
+  font-size: var(--t-h1);
   font-weight: 600;
   letter-spacing: -0.015em;
   line-height: 1.15;
@@ -139,8 +159,8 @@ body {
   font-size: 11px; font-weight: 600; text-transform: uppercase;
   letter-spacing: 0.08em; color: var(--ink-faint); margin: 0 0 10px;
 }
-a { color: var(--stamp); text-underline-offset: 2px; }
-:focus-visible { outline: 2px solid var(--stamp); outline-offset: 1px; border-radius: 2px; }
+a { color: var(--accent); text-underline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 2px; }
 
 /* ---- numbers ------------------------------------------------------------- */
 .num {
@@ -167,7 +187,7 @@ a { color: var(--stamp); text-underline-offset: 2px; }
 .shell__main { padding: 32px 36px 80px; max-width: var(--measure); min-width: 0; }
 
 .rail-back { font-size: 13px; text-decoration: none; color: var(--ink-muted); }
-.rail-back:hover { color: var(--stamp); }
+.rail-back:hover { color: var(--accent); }
 .rail-title { font-family: var(--serif); font-size: 16px; line-height: 1.3; }
 .rail-sub { font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
 
@@ -177,7 +197,7 @@ a { color: var(--stamp); text-underline-offset: 2px; }
  * strip down its left edge and the label above it.
  */
 .rail-total {
-  border: 1px solid var(--rule); border-radius: 8px;
+  border: 1px solid var(--rule); border-radius: 2px;
   border-left: 3px solid var(--ok);
   padding: 11px 12px; background: var(--surface);
 }
@@ -206,25 +226,25 @@ a { color: var(--stamp); text-underline-offset: 2px; }
 .stage {
   display: grid; grid-template-columns: 22px 1fr; gap: 10px;
   align-items: center; padding: 8px 10px;
-  border-radius: 6px; color: var(--ink-muted);
+  border-radius: 2px; color: var(--ink-muted);
   text-decoration: none; font-size: 14px;
 }
 .stage:hover { background: var(--hover); color: var(--ink); }
-.stage[aria-current='page'] { background: var(--stamp-wash); color: var(--ink); font-weight: 500; }
+.stage[aria-current='page'] { background: var(--sunk); color: var(--ink); font-weight: 500; }
 .stage__number {
   font-family: var(--mono); font-size: 10px; line-height: 17px;
   color: var(--ink-faint); border: 1px solid var(--rule-strong);
   border-radius: 999px; text-align: center; background: var(--surface);
 }
 /* A stage whose inputs are complete fills its marker in. */
-.stage--ready .stage__number { background: var(--stamp); border-color: var(--stamp); color: var(--on-stamp); }
+.stage--ready .stage__number { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
 /* ---- panels -------------------------------------------------------------- */
 .panel {
   background: var(--surface);
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  padding: 18px 20px;
+  border-radius: 2px;
+  padding: var(--s4) var(--s5);
 }
 .panel--flush { padding: 0; overflow: hidden; }
 .row { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
@@ -280,14 +300,14 @@ table.grid th.num, table.grid td.num { text-align: right; }
 input, select, textarea {
   font: inherit;
   padding: 6px 9px;
-  border: 1px solid var(--rule-strong);
-  border-radius: 5px;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
   background: var(--surface);
   color: inherit;
   max-width: 100%;
 }
 input:hover, select:hover { border-color: var(--ink-faint); }
-input:focus, select:focus, textarea:focus { border-color: var(--stamp); }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
 
 /**
  * Ledger cell: inside a grid the box chrome is pure noise, so the border only
@@ -307,12 +327,12 @@ input.cell {
   font-family: var(--mono); font-variant-numeric: tabular-nums;
   text-align: right;
   width: 100%; padding: 4px 11px;
-  border: 1px solid transparent; border-radius: 4px;
+  border: 1px solid transparent; border-radius: 2px;
   background: transparent;
 }
 input.cell::placeholder { color: var(--ink-faint); }
-input.cell:hover { border-color: var(--rule-strong); background: var(--surface); }
-input.cell:focus { border-color: var(--stamp); background: var(--surface); }
+input.cell:hover { border-color: var(--ink-faint); background: var(--surface); }
+input.cell:focus { border-color: var(--accent); background: var(--surface); }
 input.cell::-webkit-outer-spin-button,
 input.cell::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input.cell[type='number'] { -moz-appearance: textfield; }
@@ -323,18 +343,18 @@ input.cell { min-width: 4.5rem; }
 button {
   font: inherit; font-size: 14px; font-weight: 500;
   padding: 7px 15px;
-  border: 1px solid var(--stamp); border-radius: 6px;
-  background: var(--stamp); color: var(--on-stamp); cursor: pointer;
+  border: 1px solid var(--accent); border-radius: 2px;
+  background: var(--accent); color: var(--on-accent); cursor: pointer;
 }
 button:hover { filter: brightness(1.1); }
 button:disabled { opacity: 0.5; cursor: default; filter: none; }
-button.ghost { background: var(--surface); color: var(--ink); border-color: var(--rule-strong); }
+button.ghost { background: var(--surface); color: var(--ink); border-color: var(--rule); }
 button.ghost:hover { background: var(--paper); filter: none; border-color: var(--ink-faint); }
 /* A link that sits in a header row beside real buttons and must match them. */
 a.ghost {
   font: inherit; font-size: 14px; font-weight: 500;
   padding: 7px 15px; text-decoration: none;
-  border: 1px solid var(--rule-strong); border-radius: 6px;
+  border: 1px solid var(--rule); border-radius: 2px;
   background: var(--surface); color: var(--ink);
 }
 a.ghost:hover { background: var(--paper); border-color: var(--ink-faint); }
@@ -344,16 +364,16 @@ button.small { padding: 4px 10px; font-size: 13px; }
 /* A month the chart could hold but does not — one click from being a row. */
 button.chip {
   padding: 4px 10px; font-size: 13px; font-weight: 400;
-  background: var(--surface); color: var(--stamp);
-  border: 1px dashed var(--rule-strong); border-radius: 999px;
+  background: var(--surface); color: var(--accent);
+  border: 1px dashed var(--ink-faint); border-radius: 999px;
 }
-button.chip:hover { filter: none; border-color: var(--stamp); background: var(--stamp-wash); }
+button.chip:hover { filter: none; border-color: var(--accent); background: var(--sunk); }
 
 /* Row removal: present on every row, insistent on none. */
 button.erase {
   padding: 0; width: 24px; height: 24px; line-height: 1;
   background: transparent; color: var(--ink-faint);
-  border: 1px solid transparent; border-radius: 4px;
+  border: 1px solid transparent; border-radius: 2px;
 }
 tr:hover button.erase { color: var(--ink-muted); border-color: var(--rule); }
 button.erase:hover { filter: none; color: var(--recovery); border-color: var(--recovery); background: var(--surface); }
@@ -367,10 +387,10 @@ button.erase:hover { filter: none; color: var(--recovery); border-color: var(--r
    its column heading. The right stays wide for the chevron. */
 select.cell {
   font-size: 13px; padding: 4px 22px 4px 11px; width: 100%;
-  border: 1px solid transparent; border-radius: 4px; background: transparent;
+  border: 1px solid transparent; border-radius: 2px; background: transparent;
 }
-select.cell:hover { border-color: var(--rule-strong); background: var(--surface); }
-select.cell:focus { border-color: var(--stamp); background: var(--surface); }
+select.cell:hover { border-color: var(--ink-faint); background: var(--surface); }
+select.cell:focus { border-color: var(--accent); background: var(--surface); }
 
 /* align-content:start, or a field without an echo stretches its input to match
    the tallest field in the row. */
@@ -390,7 +410,7 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
 .notice {
   border-left: 3px solid var(--recovery);
   padding: 10px 14px; background: var(--surface);
-  border-radius: 0 6px 6px 0; font-size: 14px; margin: 10px 0;
+  border-radius: 0 2px 2px 0; font-size: 14px; margin: 10px 0;
 }
 .notice--ok { border-left-color: var(--ok); }
 .hint { color: var(--ink-muted); font-size: 13px; }
@@ -438,7 +458,7 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
 .report .paper {
   background: var(--surface);
   border: 1px solid var(--rule);
-  border-radius: 10px;
+  border-radius: 2px;
   padding: 34px 38px;
 }
 .report h2 { font-family: var(--serif); font-size: 17px; font-weight: 600; margin: 0; }
@@ -458,7 +478,7 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
   from { background: color-mix(in srgb, var(--ok) 22%, transparent); }
   to { background: transparent; }
 }
-.settled { animation: settle 400ms ease-out; border-radius: 3px; }
+.settled { animation: settle 400ms ease-out; border-radius: 2px; }
 @media (prefers-reduced-motion: reduce) { .settled { animation: none; } }
 
 /* ---- loading ------------------------------------------------------------- */
@@ -468,7 +488,7 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
 .spinner {
   width: 34px; height: 34px; border-radius: 50%;
   border: 3px solid var(--rule);
-  border-top-color: var(--stamp);
+  border-top-color: var(--accent);
   animation: spin 750ms linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -521,7 +541,7 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
  * the path from knowing to fixing: every problem is a link to the stage that
  * owns it, and a rates gap carries its months through to the grid.
  */
-.problems { display: grid; gap: 1px; background: var(--rule); border-radius: 8px; overflow: hidden; }
+.problems { display: grid; gap: 1px; background: var(--rule); border-radius: 2px; overflow: hidden; }
 .problem {
   display: grid; gap: 3px; padding: 9px 11px;
   background: var(--surface); text-decoration: none; color: var(--ink);
@@ -555,7 +575,7 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
 .theme-toggle {
   appearance: none; font: inherit; font-size: 12px;
   display: inline-flex; align-items: center; gap: 7px;
-  padding: 5px 9px; border-radius: 6px; cursor: pointer;
+  padding: 5px 9px; border-radius: 2px; cursor: pointer;
   background: var(--surface); color: var(--ink-muted);
   border: 1px solid var(--rule);
 }
@@ -574,7 +594,7 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
 
 /* ---- rates grid marking ------------------------------------------------- */
 /* A month this bill depends on, so the shared chart shows what is load-bearing. */
-td.month--needed { box-shadow: inset 2px 0 0 var(--stamp); font-weight: 500; }
+td.month--needed { box-shadow: inset 2px 0 0 var(--accent); font-weight: 500; }
 /* A cell the calculation asked for and did not find. */
 .cell--missing { background: var(--warn-wash); }
 table.grid tbody tr:hover .cell--missing { background: var(--warn-wash); }
@@ -638,7 +658,7 @@ table.grid tbody tr:hover .cell--missing { background: var(--warn-wash); }
 
 /* ---- disclosure ---------------------------------------------------------- */
 details > summary {
-  list-style: none; color: var(--stamp); font-weight: 500;
+  list-style: none; color: var(--accent); font-weight: 500;
 }
 details > summary::-webkit-details-marker { display: none; }
 details > summary::before { content: '+ '; font-family: var(--mono); }

@@ -77,10 +77,10 @@ export function BaseRateSummary({ rows, onOverride }: Props) {
                     <td>
                       {ruleText(key)}
                       {base?.overridden && (
-                        <span style={{ color: 'var(--stamp)', marginLeft: 8, fontSize: 12 }}>Overridden</span>
+                        <span style={{ color: 'var(--accent)', marginLeft: 8, fontSize: 12 }}>Overridden</span>
                       )}
                     </td>
-                    <td className="num" style={base?.overridden ? { color: 'var(--stamp)' } : undefined}>
+                    <td className="num" style={base?.overridden ? { color: 'var(--accent)' } : undefined}>
                       {formatComponentIndex(base?.value ?? null, key)}
                     </td>
                     {onOverride && (

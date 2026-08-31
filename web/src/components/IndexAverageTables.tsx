@@ -31,7 +31,7 @@ export function IndexAverageTables() {
                 <th>
                   {formatQuarter(q)}
                   {q === calculation.baseQuarter && (
-                    <span style={{ color: 'var(--stamp)', marginLeft: 8, textTransform: 'none', letterSpacing: 0 }}>
+                    <span style={{ color: 'var(--accent)', marginLeft: 8, textTransform: 'none', letterSpacing: 0 }}>
                       Base quarter
                     </span>
                   )}
@@ -55,7 +55,7 @@ export function IndexAverageTables() {
             </tbody>
             <tfoot>
               <tr>
-                <td style={{ color: 'var(--stamp)' }}>Average</td>
+                <td style={{ color: 'var(--accent)' }}>Average</td>
                 {COMPONENT_KEYS.map((k) => {
                   const values = monthsOfQuarter(q).map((m) => rateFor(m, k));
                   const complete = values.every((v) => v !== null);
@@ -63,7 +63,7 @@ export function IndexAverageTables() {
                     ? (values as number[]).reduce((a, b) => a + b, 0) / 3
                     : null;
                   return (
-                    <td key={k} className="num" style={{ color: 'var(--stamp)' }}>
+                    <td key={k} className="num" style={{ color: 'var(--accent)' }}>
                       {formatComponentIndex(mean, k)}
                     </td>
                   );
