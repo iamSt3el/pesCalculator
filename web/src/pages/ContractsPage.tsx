@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, type ContractSummary } from '../api.ts';
 import { Spinner } from '../components/Spinner.tsx';
+import { RunningHead } from '../components/RunningHead.tsx';
 import { ThemeToggle } from '../components/ThemeToggle.tsx';
 import { formatRupees, formatWhen } from '../format.ts';
 
@@ -58,11 +59,12 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
   }
 
   return (
-    <main style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 24px 80px' }}>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 22 }}>
+    <main className="page">
+      <RunningHead identity="Price Escalation" sub="Clause-45 billing" />
+      <div className="page-head">
         <div>
-          <h1 className="title">Price Escalation</h1>
-          <p className="subtitle">Clause-45 billing</p>
+          <h1 className="title">Contracts</h1>
+          <p className="subtitle">Every agreement this account has prepared</p>
         </div>
         <div className="row">
           <ThemeToggle />
@@ -73,13 +75,13 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
 
       {error && <p className="notice">{error}</p>}
 
-      <form onSubmit={create} className="panel row" style={{ marginBottom: 18 }}>
-        <label className="field" style={{ flex: 1, minWidth: 220 }}>
+      <form onSubmit={create} className="panel form-bar">
+        <label className="field">
           Agreement number
           <input value={agreementNo} onChange={(e) => setAgreementNo(e.target.value)}
                  placeholder="168 of 2023-24" required />
         </label>
-        <button type="submit" disabled={busy || !agreementNo.trim()} style={{ alignSelf: 'end' }}>
+        <button type="submit" disabled={busy || !agreementNo.trim()}>
           Start contract
         </button>
       </form>
@@ -113,10 +115,10 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
                 {rows.map((r) => (
                   <tr key={r.id}>
                     <td>
-                      <Link to={`/c/${r.id}`} style={{ fontWeight: 500 }}>{r.agreementNo}</Link>
+                      <Link to={`/c/${r.id}`} className="cell-link">{r.agreementNo}</Link>
                       {r.contractor && <span className="cell-sub">{r.contractor}</span>}
                     </td>
-                    <td style={{ maxWidth: 320 }}>
+                    <td className="work">
                       {r.workName || <span className="hint">—</span>}
                     </td>
                     <td><Status row={r} /></td>
@@ -128,7 +130,7 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
                           </span>}
                     </td>
                     <td className="hint">{formatWhen(r.updatedAt)}</td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td className="actions">
                       {confirming === r.id ? (
                         <span className="confirm">
                           <span className="confirm__text">Delete this agreement and its figures?</span>

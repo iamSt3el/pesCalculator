@@ -24,11 +24,11 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
   }
 
   return (
-    <main style={{ maxWidth: 350, margin: '15vh auto', padding: 20 }}>
+    <main className="page page--narrow">
       <h1 className="title">Price Escalation</h1>
       <p className="subtitle">Clause-45 billing for PWD road contracts</p>
 
-      <form onSubmit={submit} className="panel" style={{ display: 'grid', gap: 14, marginTop: 26 }}>
+      <form onSubmit={submit} className="panel stack-form">
         <label className="field">
           Email
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
@@ -46,7 +46,7 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
         </button>
       </form>
 
-      <p className="hint" style={{ marginTop: 18 }}>
+      <p className="hint hint--spaced">
         {creating ? 'Already have an account? ' : 'Need an account? '}
         <a href="#" onClick={(e) => { e.preventDefault(); setCreating(!creating); setError(null); }}>
           {creating ? 'Sign in instead' : 'Create an account'}

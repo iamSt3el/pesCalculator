@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError, type Profile } from '../api.ts';
 import { validatePasswordChange, MIN_PASSWORD } from '../password.ts';
+import { RunningHead } from '../components/RunningHead.tsx';
 import { Spinner } from '../components/Spinner.tsx';
 
 const ROLE_LABEL: Record<Profile['role'], string> = {
@@ -52,11 +53,11 @@ export function ProfilePage({ onSignOut }: { onSignOut: () => void }) {
   }
 
   return (
-    <main style={{ maxWidth: 640, margin: '0 auto', padding: '40px 24px 80px' }}>
-      <div className="row" style={{ justifyContent: 'space-between', marginBottom: 20 }}>
+    <main className="page page--medium">
+      <RunningHead identity="Your account" sub="Sign-in details for this site" />
+      <div className="page-head">
         <div>
           <h1 className="title">Your account</h1>
-          <p className="subtitle">Sign-in details for this site</p>
         </div>
         <button className="ghost" onClick={onSignOut}>Sign out</button>
       </div>
@@ -69,26 +70,26 @@ export function ProfilePage({ onSignOut }: { onSignOut: () => void }) {
       {profile === null && !loadError ? <Spinner /> : profile && (
         <div className="panel grid-fields">
           <div className="stack">
-            <span className="eyebrow" style={{ margin: 0 }}>Email</span>
+            <span className="eyebrow eyebrow--flush">Email</span>
             <span>{profile.email}</span>
           </div>
           <div className="stack">
-            <span className="eyebrow" style={{ margin: 0 }}>Role</span>
+            <span className="eyebrow eyebrow--flush">Role</span>
             <span>{ROLE_LABEL[profile.role]}</span>
           </div>
           <div className="stack">
-            <span className="eyebrow" style={{ margin: 0 }}>Joined</span>
+            <span className="eyebrow eyebrow--flush">Joined</span>
             <span>{joinedOn(profile.createdAt)}</span>
           </div>
           <div className="stack">
-            <span className="eyebrow" style={{ margin: 0 }}>Contracts owned</span>
+            <span className="eyebrow eyebrow--flush">Contracts owned</span>
             <span>{profile.contractCount}</span>
           </div>
         </div>
       )}
 
       <div className="section-head"><h2>Change password</h2></div>
-      <form onSubmit={submit} className="panel" style={{ display: 'grid', gap: 14 }}>
+      <form onSubmit={submit} className="panel stack-form">
         <label className="field">
           Current password
           <input type="password" value={current} onChange={(e) => setCurrent(e.target.value)}
@@ -116,7 +117,7 @@ export function ProfilePage({ onSignOut }: { onSignOut: () => void }) {
         <button type="submit" disabled={busy}>{busy ? 'Changing…' : 'Change password'}</button>
       </form>
 
-      <p className="hint" style={{ marginTop: 18 }}>
+      <p className="hint hint--spaced">
         There is no email-based recovery. If you forget this password, an administrator
         must reset it directly in the database.
       </p>

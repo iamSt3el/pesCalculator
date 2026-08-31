@@ -43,7 +43,7 @@ export function App() {
           <Route path="calculation" element={<CalculationPage />} />
           <Route path="print" element={<PrintPage />} />
         </Route>
-        <Route path="*" element={<main style={{ padding: 24 }}><p>Page not found. <a href="/">Back to contracts</a></p></main>} />
+        <Route path="*" element={<main className="page page--narrow"><p>Page not found. <a href="/">Back to contracts</a></p></main>} />
       </Routes>
     </BrowserRouter>
   );

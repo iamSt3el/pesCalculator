@@ -271,6 +271,28 @@ a { color: var(--accent); text-underline-offset: 2px; }
   border-radius: 2px; line-height: 16px;
 }
 
+/* ---- standalone pages ---------------------------------------------------- */
+/**
+ * The contracts list, sign-in and account pages. They sit outside the contract
+ * shell, and used to be bare mains with inline maxWidth and padding — which is
+ * why they read as a different application from the stages.
+ */
+.page { max-width: var(--measure); margin: 0 auto; padding: var(--s6) var(--s5) var(--s8); }
+.page--narrow { max-width: 380px; padding-top: 12vh; }
+.page--medium { max-width: 640px; }
+.page-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: var(--s4); margin-bottom: var(--s5);
+}
+.stack-form { display: grid; gap: var(--s4); margin-top: var(--s5); }
+.hint--spaced { margin-top: var(--s5); }
+.form-bar { display: flex; gap: var(--s4); align-items: flex-end; flex-wrap: wrap; margin-bottom: var(--s4); }
+.form-bar .field { flex: 1; min-width: 220px; }
+.cell-link { font-weight: 500; }
+td.work { max-width: 320px; }
+td.actions { text-align: right; }
+.eyebrow--flush { margin: 0; }
+
 /* ---- panels -------------------------------------------------------------- */
 .panel {
   background: var(--surface);
