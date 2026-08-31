@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api, type AdjustmentRow } from '../api.ts';
 import { useContract } from '../ContractLayout.tsx';
+import { useGridKeys } from '../grid.ts';
 import { formatMonth, formatQuarter, formatRupees } from '../format.ts';
 import { useDebouncedSave, useSettle } from '../hooks.ts';
 
@@ -20,6 +21,8 @@ export function ScheduleTable() {
     await api.putPayments(bundle.contract.id, next.filter((r) => r.adjustment !== 0));
     await reload();
   });
+
+  const { grid, onKeyDown } = useGridKeys(calculation?.schedule.rows.length ?? 0, 1);
 
   if (!calculation) return null;
 
@@ -57,17 +60,18 @@ export function ScheduleTable() {
               <th className="r">Payment</th>
             </tr>
           </thead>
-          <tbody>
-            {calculation.schedule.rows.map((r) => (
-              <tr key={r.month}>
-                <td style={{ whiteSpace: 'nowrap' }}>{formatMonth(r.month)}</td>
-                <td className="r"><Computed value={r.computed} /></td>
+          <tbody ref={grid}>
+            {calculation.schedule.rows.map((row, i) => (
+              <tr key={row.month}>
+                <td style={{ whiteSpace: 'nowrap' }}>{formatMonth(row.month)}</td>
+                <td className="r"><Computed value={row.computed} /></td>
                 <td>
                   <input className="cell" type="number" step="0.01"
-                         value={adjustmentFor(r.month) || ''} placeholder="0"
-                         onChange={(e) => setAdjustment(r.month, toPaise(e.target.value))} />
+                         data-r={i} data-c={0} onKeyDown={onKeyDown}
+                         value={adjustmentFor(row.month) || ''} placeholder="0"
+                         onChange={(e) => setAdjustment(row.month, toPaise(e.target.value))} />
                 </td>
-                <td className={`num${r.payment < 0 ? ' num--negative' : ''}`}>{formatRupees(r.payment)}</td>
+                <td className={`num${row.payment < 0 ? ' num--negative' : ''}`}>{formatRupees(row.payment)}</td>
               </tr>
             ))}
           </tbody>

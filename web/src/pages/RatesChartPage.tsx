@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api, type RateRow } from '../api.ts';
 import { PasteBox } from '../components/PasteBox.tsx';
 import { PrintButton } from '../components/PrintButton.tsx';
 import { useContract } from '../ContractLayout.tsx';
 import { formatMonth } from '../format.ts';
+import { useGridKeys } from '../grid.ts';
 import { useDebouncedSave } from '../hooks.ts';
 import { furtherMonths, neededMonths, nextMonthAfter } from '../months.ts';
 
@@ -26,44 +27,6 @@ const BLANK: Omit<RateRow, 'month'> = {
 };
 
 const isMonthKey = (m: string) => /^\d{4}-\d{2}$/.test(m);
-
-/**
- * Arrow keys and Enter move between cells, because this is a grid of figures
- * and every other grid of figures behaves this way. Without it, entering a
- * month of published indices means seven reaches for the mouse or a tab route
- * that runs off the end of the row into the delete button.
- */
-function useGridKeys(rowCount: number, colCount: number) {
-  const grid = useRef<HTMLTableSectionElement>(null);
-
-  const focusCell = (r: number, c: number) => {
-    if (r < 0 || r >= rowCount || c < 0 || c >= colCount) return false;
-    const el = grid.current?.querySelector<HTMLInputElement>(`input[data-r="${r}"][data-c="${c}"]`);
-    if (!el) return false;
-    el.focus();
-    el.select();
-    return true;
-  };
-
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    const r = Number(e.currentTarget.dataset.r);
-    const c = Number(e.currentTarget.dataset.c);
-    // Left and right belong to the caret while there is text to move through.
-    const atStart = e.currentTarget.selectionStart === 0;
-    const atEnd = e.currentTarget.selectionEnd === e.currentTarget.value.length;
-
-    const move =
-      e.key === 'ArrowDown' || e.key === 'Enter' ? [r + 1, c]
-      : e.key === 'ArrowUp' ? [r - 1, c]
-      : e.key === 'ArrowLeft' && atStart ? [r, c - 1]
-      : e.key === 'ArrowRight' && atEnd ? [r, c + 1]
-      : null;
-
-    if (move && focusCell(move[0]!, move[1]!)) e.preventDefault();
-  };
-
-  return { grid, onKeyDown };
-}
 
 export function RatesChartPage() {
   const { rates, calculation, reload } = useContract();

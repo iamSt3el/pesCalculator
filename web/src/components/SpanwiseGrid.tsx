@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api, type ProgressRow } from '../api.ts';
 import { useContract } from '../ContractLayout.tsx';
+import { useGridKeys } from '../grid.ts';
 import { formatDate, formatMonth, formatRupees } from '../format.ts';
 import { useDebouncedSave, useSettle } from '../hooks.ts';
 
@@ -36,6 +37,7 @@ export function SpanwiseGrid() {
   });
 
   const months = monthsBetween(contract.commencement, contract.actualCompletion);
+  const { grid, onKeyDown } = useGridKeys(months.length, 4);
   const spans = calculation?.spans;
 
   const daysFor = (month: string): [number, number, number, number] =>
@@ -109,8 +111,8 @@ export function SpanwiseGrid() {
               <th className="r">Amount</th>
             </tr>
           </thead>
-          <tbody>
-            {months.map((month) => {
+          <tbody ref={grid}>
+            {months.map((month, r) => {
               const days = daysFor(month);
               return (
                 <tr key={month}>
@@ -118,6 +120,7 @@ export function SpanwiseGrid() {
                   {[0, 1, 2, 3].map((i) => (
                     <td key={i}>
                       <input className="cell" type="number" min="0" max="31"
+                             data-r={r} data-c={i} onKeyDown={onKeyDown}
                              value={days[i] || ''}
                              placeholder="0"
                              onChange={(e) => setDay(month, i, Number(e.target.value))} />
