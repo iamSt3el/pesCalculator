@@ -285,9 +285,31 @@ set stays correct if a sheet is ever added. The preparation date is taken at ren
 sheet that overflows onto a second physical page carries head and foot on its first page
 only. CSS `@page` margin boxes are not supported in Chrome, and the `position: fixed`
 alternative repeats identical content on every page, which would print the wrong sheet
-number. Implementation must measure the three sheets against real Agreement 168 data; if
-Index Average overflows, the fix is to reduce that sheet's density, not to reach for
-`position: fixed`.
+number.
+
+> **Amended 2026-08-31, after printing Agreement 168.** This section assumed three sheets
+> meant three pages. They do not. Base Rate just overruns A4, and the Calculation needs two
+> pages for six components — the first attempt printed a six-page PDF, three pages of
+> content and three blank but for a footer, because a `min-height` forcing each sheet to a
+> full page pushed the foot of any over-long sheet onto a page of its own.
+>
+> **A sheet is a named section of the filed set, not a page.** There is no `min-height`;
+> each sheet's foot sits directly under the content it closes, and `Sheet n of 3` names the
+> section rather than claiming a page count. Reducing density to force one page per sheet
+> was considered and rejected: it would shrink the figures on the densest sheet and would
+> break again on any contract with more months than this one.
+>
+> Measured, not guessed: at the screen's 12.5px the widest formula line of Agreement 168 is
+> ~709px against ~688px of usable A4 width at 14mm margins, so it would have run off the
+> sheet. The widest lines are bitumen, whose index is a rupee rate per tonne and so carries
+> grouping and paise where the other five carry two decimals. Print sets the block to
+> 11.5px with tightened operator gutters, bringing it to ~624px.
+
+**A seventh defect, found only by printing.** The Schedule of payment rendered its
+Adjustment column as editable `<input>` elements on paper, showing a raw `500000` beside a
+grouped `22,14,599.00` in the next column. `BaseRateSummary` already had the right pattern —
+it drops its Override column in print — and `ScheduleTable` now follows it. A filed bill
+must record the figure, never the means of changing it.
 
 ### 7.3 Sheet layout
 
