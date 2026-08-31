@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { furtherMonths, monthsBetween, monthsOfQuarter, nextMonthAfter } from '../src/months.ts';
+import { furtherMonths, monthsBetween, monthsOfQuarter, neededMonths, nextMonthAfter } from '../src/months.ts';
 
 test('nextMonthAfter takes the month following the last one in the chart', () => {
   assert.equal(nextMonthAfter(['2023-04', '2026-05', '2026-06']), '2026-07');
@@ -54,4 +54,21 @@ test('monthsOfQuarter names the three months of a financial quarter', () => {
   assert.deepEqual(monthsOfQuarter('2023-Q3'), ['2023-07', '2023-08', '2023-09']);
   assert.deepEqual(monthsOfQuarter('2024-Q1'), ['2024-01', '2024-02', '2024-03']);
   assert.deepEqual(monthsOfQuarter('2024-Q4'), ['2024-10', '2024-11', '2024-12']);
+});
+
+test('neededMonths gathers every month the bill reads, from all three sources', () => {
+  const needed = neededMonths({
+    quarters: ['2023-Q3'],
+    schedule: { rows: [{ month: '2023-11' }, { month: '2023-12' }] },
+    bases: {
+      labour: { sourceMonths: ['2023-07', '2023-08', '2023-09'] },
+      bitumen: { sourceMonths: ['2023-08'] },
+    },
+  });
+  assert.deepEqual([...needed].sort(),
+    ['2023-07', '2023-08', '2023-09', '2023-11', '2023-12']);
+});
+
+test('neededMonths is empty when there is no calculation to read', () => {
+  assert.equal(neededMonths(null).size, 0);
 });

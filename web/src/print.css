@@ -9,6 +9,23 @@
 }
 
 @media print {
+  /**
+   * A bill printed from dark mode still has to come out on white paper, so the
+   * whole palette is pinned light here. The tripled selector is for the same
+   * reason as .paper.paper below - this file is bundled before styles.css, and
+   * :root[data-theme='dark'] would otherwise outrank a plain :root.
+   */
+  :root:root:root {
+    color-scheme: light;
+    --paper: #FFFFFF; --surface: #FFFFFF; --sunk: #FFFFFF; --stripe: #FFFFFF;
+    --ink: #000000; --ink-muted: #333333; --ink-faint: #555555;
+    --rule: #CCCCCC; --rule-strong: #888888; --hover: #FFFFFF;
+    --stamp: #000000; --stamp-wash: #FFFFFF; --on-stamp: #FFFFFF;
+    --ok: #000000; --ok-wash: #FFFFFF;
+    --warn: #000000; --warn-wash: #FFFFFF;
+    --recovery: #000000; --recovery-wash: #FFFFFF;
+  }
+
   .shell__nav, button, .no-print { display: none !important; }
   .shell { display: block; }
   body { background: #fff; }

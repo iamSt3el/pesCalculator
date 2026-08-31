@@ -57,6 +57,70 @@ export async function listContracts(ownerId: number): Promise<Array<{ id: number
   }));
 }
 
+export interface OwnedBundle extends ContractBundle { updatedAt: string }
+
+/**
+ * Every bundle the owner has, so the contracts list can show what each one is
+ * worth without opening it. Grouped by contract_id rather than looped: this is
+ * three queries whatever the list length, where calling getContract per row
+ * would be four apiece.
+ */
+export async function listBundles(ownerId: number): Promise<OwnedBundle[]> {
+  const { rows } = await pool.query<ContractDbRow & { updated_at: string }>(
+    `SELECT ${CONTRACT_COLUMNS}, updated_at::text
+       FROM contracts WHERE user_id = $1 ORDER BY id DESC`,
+    [ownerId],
+  );
+  if (rows.length === 0) return [];
+  const ids = rows.map((r) => r.id);
+
+  const components = await pool.query<{ contract_id: number; key: ComponentConfig['key']; percent: number; factor: number; base_rule: ComponentConfig['baseRule']; base_override: number | null }>(
+    `SELECT contract_id, key, percent, factor, base_rule, base_override FROM components
+     WHERE contract_id = ANY($1)
+     ORDER BY array_position(ARRAY['labour','material','cement','steel','pol','bitumen']::text[], key)`,
+    [ids],
+  );
+  const progress = await pool.query<{ contract_id: number; month: string; span1_days: number; span2_days: number; span3_days: number; span4_days: number }>(
+    `SELECT contract_id, month::text, span1_days, span2_days, span3_days, span4_days
+       FROM progress WHERE contract_id = ANY($1) ORDER BY month`,
+    [ids],
+  );
+  const adjustments = await pool.query<{ contract_id: number; month: string; adjustment: number }>(
+    'SELECT contract_id, month::text, adjustment FROM payments WHERE contract_id = ANY($1) ORDER BY month',
+    [ids],
+  );
+
+  const group = <T extends { contract_id: number }, R>(qr: { rows: T[] }, map: (r: T) => R) => {
+    const out = new Map<number, R[]>();
+    for (const r of qr.rows) {
+      const held = out.get(r.contract_id);
+      if (held) held.push(map(r));
+      else out.set(r.contract_id, [map(r)]);
+    }
+    return out;
+  };
+
+  const byComponents = group(components, (c) => ({
+    key: c.key, percent: c.percent, factor: c.factor,
+    baseRule: c.base_rule, baseOverride: c.base_override,
+  }));
+  const byProgress = group(progress, (pr) => ({
+    month: pr.month.slice(0, 7),
+    spanDays: [pr.span1_days, pr.span2_days, pr.span3_days, pr.span4_days] as [number, number, number, number],
+  }));
+  const byAdjustments = group(adjustments, (a) => ({
+    month: a.month.slice(0, 7), adjustment: a.adjustment,
+  }));
+
+  return rows.map((r) => ({
+    contract: toRecord(r),
+    components: byComponents.get(r.id) ?? [],
+    progress: byProgress.get(r.id) ?? [],
+    adjustments: byAdjustments.get(r.id) ?? [],
+    updatedAt: r.updated_at,
+  }));
+}
+
 /**
  * Returns the owner's id, or null when the contract does not exist. A contract
  * that exists but is unowned reports null too, so it stays unreachable until

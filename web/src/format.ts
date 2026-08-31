@@ -93,3 +93,24 @@ export function rupeesInWords(n: number): string {
   ].filter(Boolean).join(' and ');
   return `${sign}${words.charAt(0).toUpperCase()}${words.slice(1)} only`;
 }
+
+/**
+ * When a record was last touched, in the shortest true form: the recent past
+ * reads better as a distance than as a date, and anything older is a date the
+ * reader can match against their own paperwork.
+ */
+export function formatWhen(iso: string, now = new Date()): string {
+  if (!iso) return '—';
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return '—';
+
+  const day = (d: Date) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round((day(now) - day(then)) / 86_400_000);
+
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days} days ago`;
+  return formatDate(
+    `${then.getFullYear()}-${String(then.getMonth() + 1).padStart(2, '0')}-${String(then.getDate()).padStart(2, '0')}`,
+  );
+}

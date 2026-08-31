@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api, type RateRow } from '../api.ts';
 import { PasteBox } from '../components/PasteBox.tsx';
 import { PrintButton } from '../components/PrintButton.tsx';
 import { useContract } from '../ContractLayout.tsx';
 import { formatMonth } from '../format.ts';
 import { useDebouncedSave } from '../hooks.ts';
-import { furtherMonths, nextMonthAfter } from '../months.ts';
+import { furtherMonths, neededMonths, nextMonthAfter } from '../months.ts';
 
 type NumericField = Exclude<keyof RateRow, 'month'>;
 
@@ -26,8 +27,48 @@ const BLANK: Omit<RateRow, 'month'> = {
 
 const isMonthKey = (m: string) => /^\d{4}-\d{2}$/.test(m);
 
+/**
+ * Arrow keys and Enter move between cells, because this is a grid of figures
+ * and every other grid of figures behaves this way. Without it, entering a
+ * month of published indices means seven reaches for the mouse or a tab route
+ * that runs off the end of the row into the delete button.
+ */
+function useGridKeys(rowCount: number, colCount: number) {
+  const grid = useRef<HTMLTableSectionElement>(null);
+
+  const focusCell = (r: number, c: number) => {
+    if (r < 0 || r >= rowCount || c < 0 || c >= colCount) return false;
+    const el = grid.current?.querySelector<HTMLInputElement>(`input[data-r="${r}"][data-c="${c}"]`);
+    if (!el) return false;
+    el.focus();
+    el.select();
+    return true;
+  };
+
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    const r = Number(e.currentTarget.dataset.r);
+    const c = Number(e.currentTarget.dataset.c);
+    // Left and right belong to the caret while there is text to move through.
+    const atStart = e.currentTarget.selectionStart === 0;
+    const atEnd = e.currentTarget.selectionEnd === e.currentTarget.value.length;
+
+    const move =
+      e.key === 'ArrowDown' || e.key === 'Enter' ? [r + 1, c]
+      : e.key === 'ArrowUp' ? [r - 1, c]
+      : e.key === 'ArrowLeft' && atStart ? [r, c - 1]
+      : e.key === 'ArrowRight' && atEnd ? [r, c + 1]
+      : null;
+
+    if (move && focusCell(move[0]!, move[1]!)) e.preventDefault();
+  };
+
+  return { grid, onKeyDown };
+}
+
 export function RatesChartPage() {
   const { rates, calculation, reload } = useContract();
+  const [params, setParams] = useSearchParams();
+  const [confirming, setConfirming] = useState<string | null>(null);
   const [rows, setRows] = useState<RateRow[]>(rates);
   const [newMonth, setNewMonth] = useState(() => nextMonthAfter(rates.map((r) => r.month)));
   const [justAdded, setJustAdded] = useState<string[]>([]);
@@ -62,11 +103,7 @@ export function RatesChartPage() {
   };
 
   const removeMonth = async (month: string) => {
-    const ok = confirm(
-      `Remove ${formatMonth(month)} from the rates chart?\n\n` +
-      'The chart is shared, so every contract loses these figures.',
-    );
-    if (!ok) return;
+    setConfirming(null);
     setBusy(month);
     setError(null);
     try {
@@ -86,6 +123,27 @@ export function RatesChartPage() {
   const absent = missing.filter((m) => !rows.some((r) => r.month === m));
   const ahead = furtherMonths(rows.map((r) => r.month));
   const canAdd = isMonthKey(newMonth) && !rows.some((r) => r.month === newMonth);
+
+  // Months this contract's bill actually reads, so the shared chart shows which
+  // of its rows are load-bearing for the contract currently open.
+  const needed = neededMonths(calculation);
+  const gaps = new Set(missing);
+  const { grid, onKeyDown } = useGridKeys(rows.length, COLUMNS.length);
+
+  /**
+   * A problem in the rail links here with the months it named. Scroll the first
+   * of them into view once, then drop the parameter so a later reload of the
+   * page does not jump the reader somewhere they did not ask to go.
+   */
+  const focus = params.get('focus');
+  useEffect(() => {
+    if (!focus) return;
+    const first = focus.split(',')[0];
+    const el = first && document.getElementById(`rate-${first}`);
+    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    setParams({}, { replace: true });
+  }, [focus, setParams]);
+  const flagged = new Set((focus ?? '').split(',').filter(Boolean));
 
   return (
     <>
@@ -165,28 +223,46 @@ export function RatesChartPage() {
               <th className="r no-print"><span className="sr-only">Remove</span></th>
             </tr>
           </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.month}
-                  className={justAdded.includes(row.month) ? 'settled' : undefined}
-                  style={absent.includes(row.month)
-                    ? { background: 'rgba(160,34,24,0.06)' } : undefined}>
-                <td style={{ whiteSpace: 'nowrap' }}>{formatMonth(row.month)}</td>
-                {COLUMNS.map((c) => (
-                  <td key={c.field}>
+          <tbody ref={grid}>
+            {rows.map((row, r) => (
+              <tr key={row.month} id={`rate-${row.month}`}
+                  className={justAdded.includes(row.month) || flagged.has(row.month)
+                    ? 'settled' : undefined}>
+                <td className={needed.has(row.month) ? 'month--needed' : undefined}
+                    style={{ whiteSpace: 'nowrap' }}>
+                  {formatMonth(row.month)}
+                  {gaps.has(row.month) && <span className="cell-sub">this bill needs it</span>}
+                </td>
+                {COLUMNS.map((c, i) => (
+                  <td key={c.field}
+                      className={gaps.has(row.month) && row[c.field] === null
+                        ? 'cell--missing' : undefined}>
                     <input className="cell" type="number" step="0.01"
+                           data-r={r} data-c={i} onKeyDown={onKeyDown}
                            value={row[c.field] ?? ''} placeholder="—"
                            aria-label={`${c.label}, ${formatMonth(row.month)}`}
                            onChange={(e) => update(row.month, c.field, e.target.value)} />
                   </td>
                 ))}
                 <td className="r no-print">
-                  <button className="erase" disabled={busy === row.month}
-                          title={`Remove ${formatMonth(row.month)}`}
-                          aria-label={`Remove ${formatMonth(row.month)}`}
-                          onClick={() => void removeMonth(row.month)}>
-                    {busy === row.month ? '…' : '✕'}
-                  </button>
+                  {confirming === row.month ? (
+                    <span className="confirm">
+                      <span className="confirm__text">
+                        The chart is shared — every contract loses these figures.
+                      </span>
+                      <button className="danger small" onClick={() => void removeMonth(row.month)}>
+                        Remove
+                      </button>
+                      <button className="ghost small" onClick={() => setConfirming(null)}>Keep</button>
+                    </span>
+                  ) : (
+                    <button className="erase" disabled={busy === row.month}
+                            title={`Remove ${formatMonth(row.month)}`}
+                            aria-label={`Remove ${formatMonth(row.month)}`}
+                            onClick={() => setConfirming(row.month)}>
+                      {busy === row.month ? '…' : '✕'}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

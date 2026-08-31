@@ -54,3 +54,24 @@ export function monthsOfQuarter(quarter: string): string[] {
   const first = (Number(n) - 1) * 3 + 1;
   return [0, 1, 2].map((i) => `${y}-${String(first + i).padStart(2, '0')}`);
 }
+
+/**
+ * Every month this bill actually reads: the three of each quarter under
+ * consideration, each month the schedule pays out in (bitumen is billed
+ * monthly), and whatever months the base indices came from. The rates chart is
+ * shared by every contract, so this is what marks the rows that are
+ * load-bearing for the contract in front of you.
+ */
+export function neededMonths(calculation: {
+  quarters: string[];
+  schedule: { rows: Array<{ month: string }> };
+  bases: Record<string, { sourceMonths: string[] }>;
+} | null): Set<string> {
+  const out = new Set<string>();
+  if (!calculation) return out;
+
+  for (const q of calculation.quarters) for (const m of monthsOfQuarter(q)) out.add(m);
+  for (const r of calculation.schedule.rows) out.add(r.month);
+  for (const b of Object.values(calculation.bases)) for (const m of b.sourceMonths) out.add(m);
+  return out;
+}

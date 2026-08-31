@@ -4,6 +4,8 @@ import {
   contractOwnerId, createContract, getContract, listContracts, replaceComponents,
   replaceProgress, replaceAdjustments, updateContract, deleteContract,
 } from '../src/repo/contracts.ts';
+import { listBundles } from '../src/repo/contracts.ts';
+import { listContractSummaries } from '../src/assemble.ts';
 import { adjustmentsBody, progressBody } from '../src/routes/contracts.ts';
 import { pool } from '../src/db.ts';
 import { runMigrations } from '../src/migrate.ts';
@@ -131,6 +133,58 @@ test('listContracts returns a summary of the owner\'s contracts only', async () 
   assert.equal(mine.some((c) => c.id === theirs.id), false);
 
   assert.deepEqual((await listContracts(other)).map((c) => c.id), [theirs.id]);
+});
+
+test('listBundles carries each contract\'s components, progress and adjustments', async () => {
+  const c = await createContract('bundled', owner);
+  await replaceProgress(c.id, [{ month: '2023-09', spanDays: [6, 0, 0, 0] }]);
+  await replaceAdjustments(c.id, [{ month: '2023-09', adjustment: 500 }]);
+
+  const found = (await listBundles(owner)).find((b) => b.contract.id === c.id);
+  assert.ok(found);
+  assert.equal(found.components.length, 6);
+  assert.deepEqual(found.progress.map((p) => p.month), ['2023-09']);
+  assert.deepEqual(found.adjustments, [{ month: '2023-09', adjustment: 500 }]);
+  assert.ok(found.updatedAt, 'carries a timestamp for the contracts list');
+
+  // A contract with no children still appears, with empty collections rather
+  // than missing keys - the list renders every contract, finished or not.
+  const bare = await createContract('bare', owner);
+  const empty = (await listBundles(owner)).find((b) => b.contract.id === bare.id);
+  assert.deepEqual(empty!.progress, []);
+  assert.deepEqual(empty!.adjustments, []);
+});
+
+test('a contract with nothing in it yet is blank, not provisional', async () => {
+  const fresh = await createContract('untouched', owner);
+  const row = (await listContractSummaries(owner)).find((r) => r.id === fresh.id);
+  assert.ok(row);
+  assert.equal(row.status, 'blank');
+  // No payable is honest here; zero would read as a bill that came to nothing.
+  assert.equal(row.payable, null);
+  assert.equal(row.agreementNo, 'untouched');
+});
+
+test('a contract that has been started reports its payable and what is outstanding', async () => {
+  const started = await createContract('started', owner);
+  await updateContract(started.id, {
+    workDoneAmount: 1_000_000, commencement: '2023-09-24', actualCompletion: '2024-02-23',
+    bidDate: '2023-09-12',
+  });
+
+  const row = (await listContractSummaries(owner)).find((r) => r.id === started.id);
+  assert.ok(row);
+  // The rates chart is empty in these tests and the shares total zero, so the
+  // bill cannot settle - which is exactly the state the list must show.
+  assert.equal(row.status, 'provisional');
+  assert.ok(row.problemCount > 0);
+  assert.equal(typeof row.payable, 'number');
+});
+
+test('summaries stay owner-scoped', async () => {
+  const theirs = await createContract('not yours either', other);
+  const mine = await listContractSummaries(owner);
+  assert.equal(mine.some((r) => r.id === theirs.id), false);
 });
 
 test('an unowned contract belongs to nobody and appears in no list', async () => {

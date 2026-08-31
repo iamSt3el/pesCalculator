@@ -13,10 +13,11 @@ export function IndexAveragePage() {
   }
 
   return (
-    <>
+    <div className="derived">
       <div className="spread">
         <div>
-          <h1 className="title">Index Average</h1>
+          <span className="derived-mark">Computed</span>
+          <h1 className="title" style={{ marginTop: 4 }}>Index Average</h1>
           <p className="subtitle">
             Derived from the rates chart. Nothing here is entered by hand.
           </p>
@@ -24,6 +25,6 @@ export function IndexAveragePage() {
         <PrintButton />
       </div>
       <IndexAverageTables />
-    </>
+    </div>
   );
 }

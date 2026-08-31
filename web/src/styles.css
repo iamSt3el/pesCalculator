@@ -1,24 +1,107 @@
+/**
+ * Every colour is a token with three definitions: this block is the light
+ * palette, the media query below it follows the reader's system setting, and
+ * the [data-theme] blocks let an explicit choice beat the system in either
+ * direction. Nothing outside these blocks may name a literal colour, or it
+ * survives into the theme it was not written for.
+ *
+ * --stamp means one thing only: something you can interact with. It used to be
+ * the colour of row hover, the running total, the payable and the settle flash
+ * as well, which left nothing on the page looking more important than anything
+ * else. State has its own tokens now.
+ */
 :root {
-  --paper: #FBFCFD;
+  color-scheme: light;
+
+  --paper: #EAEEF3;
   --surface: #FFFFFF;
-  --ink: #0F172A;
-  --ink-muted: #5A6579;
-  --ink-faint: #8B94A3;
-  --rule: #E3E8EF;
+  /* Derived surfaces: a stage that computes rather than asks sits on this. */
+  --sunk: #F5F8FA;
+  --ink: #101720;
+  --ink-muted: #55606E;
+  --ink-faint: #667382;
+  --rule: #DEE4EB;
   /* The zebra stripe, flattened against --surface. Opaque on purpose: the
      first column goes sticky on a narrow screen, and a translucent stripe
      would let the cells scrolling beneath it show through. */
-  --stripe: #FAFAFB;
-  --rule-strong: #C8D0DC;
+  --stripe: #F8FAFB;
+  --rule-strong: #BFC8D3;
+  --hover: #F1F4F8;
+
   --stamp: #4338CA;
-  --stamp-wash: #EEEDFB;
+  --stamp-wash: #EDECFB;
+  /* Text laid over --stamp. It flips with the accent, which is dark on a light
+     ground and light on a dark one - white would vanish into the dark theme. */
+  --on-stamp: #FFFFFF;
+
+  --ok: #126B4C;
+  --ok-wash: #E2F1EA;
+  --warn: #8A5300;
+  --warn-wash: #FAEFD9;
   --recovery: #A02218;
+  --recovery-wash: #FBEAE7;
 
   --sans: 'IBM Plex Sans', system-ui, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
   --serif: 'IBM Plex Serif', Georgia, serif;
 
   --measure: 1120px;
+}
+
+/* The un-stamped default: most readers never set a theme, so the system
+   setting is all that separates them. An explicit light choice still wins. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --paper: #0D1116;
+    --surface: #151B22;
+    --sunk: #1A222A;
+    --ink: #E2E8EF;
+    --ink-muted: #99A5B2;
+    --ink-faint: #7D8A97;
+    --rule: #252D37;
+    --stripe: #191F27;
+    --rule-strong: #38424E;
+    --hover: #1E262F;
+
+    --stamp: #A29CF7;
+    --stamp-wash: #211F3E;
+    --on-stamp: #16123A;
+
+    --ok: #5CBE95;
+    --ok-wash: #122A21;
+    --warn: #DDA84A;
+    --warn-wash: #2B2211;
+    --recovery: #EC8A80;
+    --recovery-wash: #2D1715;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --paper: #0D1116;
+  --surface: #151B22;
+  --sunk: #1A222A;
+  --ink: #E2E8EF;
+  --ink-muted: #99A5B2;
+  --ink-faint: #7D8A97;
+  --rule: #252D37;
+  --stripe: #191F27;
+  --rule-strong: #38424E;
+  --hover: #1E262F;
+
+  --stamp: #A29CF7;
+  --stamp-wash: #211F3E;
+  --on-stamp: #16123A;
+
+  --ok: #5CBE95;
+  --ok-wash: #122A21;
+  --warn: #DDA84A;
+  --warn-wash: #2B2211;
+  --recovery: #EC8A80;
+  --recovery-wash: #2D1715;
 }
 
 * { box-sizing: border-box; }
@@ -88,27 +171,35 @@ a { color: var(--stamp); text-underline-offset: 2px; }
 .rail-title { font-family: var(--serif); font-size: 16px; line-height: 1.3; }
 .rail-sub { font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
 
-/* Live payable, visible from every stage. */
+/**
+ * Live payable, visible from every stage. The figure itself stays ink whatever
+ * its state - it is the answer, not a status - and the state is carried by the
+ * strip down its left edge and the label above it.
+ */
 .rail-total {
   border: 1px solid var(--rule); border-radius: 8px;
-  padding: 12px; background: var(--stamp-wash);
+  border-left: 3px solid var(--ok);
+  padding: 11px 12px; background: var(--surface);
 }
 .rail-total__label {
   font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
-  text-transform: uppercase; color: var(--stamp);
+  text-transform: uppercase; color: var(--ok);
 }
 .rail-total__value {
   font-family: var(--mono); font-variant-numeric: tabular-nums;
-  font-size: 21px; font-weight: 600; color: var(--stamp);
+  font-size: 22px; font-weight: 600; color: var(--ink);
   margin-top: 3px; letter-spacing: -0.02em;
 }
 .rail-total__note { font-size: 11px; color: var(--ink-muted); margin-top: 3px; }
-.rail-total--pending { background: var(--surface); }
+
+.rail-total--pending { border-left-color: var(--warn); background: var(--warn-wash); }
+.rail-total--pending .rail-total__label { color: var(--warn); }
+.rail-total--empty { border-left-color: var(--rule-strong); }
+.rail-total--empty .rail-total__label,
+.rail-total--empty .rail-total__value { color: var(--ink-faint); }
 
 /* Account links, pinned to the bottom of the rail on a wide screen. */
 .rail-foot { display: grid; gap: 6px; margin-top: auto; }
-.rail-total--pending .rail-total__label,
-.rail-total--pending .rail-total__value { color: var(--ink-faint); }
 
 /* ---- stage rail ---------------------------------------------------------- */
 .stage-rail { display: flex; flex-direction: column; gap: 1px; }
@@ -118,7 +209,7 @@ a { color: var(--stamp); text-underline-offset: 2px; }
   border-radius: 6px; color: var(--ink-muted);
   text-decoration: none; font-size: 14px;
 }
-.stage:hover { background: rgba(15, 23, 42, 0.035); color: var(--ink); }
+.stage:hover { background: var(--hover); color: var(--ink); }
 .stage[aria-current='page'] { background: var(--stamp-wash); color: var(--ink); font-weight: 500; }
 .stage__number {
   font-family: var(--mono); font-size: 10px; line-height: 17px;
@@ -126,7 +217,7 @@ a { color: var(--stamp); text-underline-offset: 2px; }
   border-radius: 999px; text-align: center; background: var(--surface);
 }
 /* A stage whose inputs are complete fills its marker in. */
-.stage--ready .stage__number { background: var(--stamp); border-color: var(--stamp); color: #fff; }
+.stage--ready .stage__number { background: var(--stamp); border-color: var(--stamp); color: var(--on-stamp); }
 
 /* ---- panels -------------------------------------------------------------- */
 .panel {
@@ -155,11 +246,25 @@ table.grid thead th {
 table.grid tbody td { border-bottom: 1px solid var(--rule); }
 table.grid tbody tr { background: var(--surface); }
 table.grid tbody tr:nth-child(even) { background: var(--stripe); }
-table.grid tbody tr:hover { background: var(--stamp-wash); }
+table.grid tbody tr:hover { background: var(--hover); }
 table.grid tfoot td {
   font-weight: 600; border-top: 1px solid var(--rule-strong);
   background: var(--surface); height: 40px;
 }
+/* Hold the row's label still while the figures scroll under it. Each sticky
+   cell needs an opaque background of its own, or the columns sliding beneath
+   show straight through it -- the body takes the row's colour, while the head
+   and foot keep the one they already paint. Sticky at every width, not only on
+   a phone: the rates chart is seven columns of figures and scrolls sideways on
+   a laptop too, and a figure whose month has slid away cannot be checked. */
+table.grid tbody td:first-child {
+  position: sticky; left: 0; z-index: 1; background: inherit;
+}
+table.grid thead th:first-child { position: sticky; left: 0; z-index: 3; }
+table.grid tfoot td:first-child {
+  position: sticky; left: 0; z-index: 1; background: var(--surface);
+}
+
 .scroller { overflow: auto; max-height: 70vh; }
 .scroller--short { max-height: none; overflow-x: auto; }
 /**
@@ -219,7 +324,7 @@ button {
   font: inherit; font-size: 14px; font-weight: 500;
   padding: 7px 15px;
   border: 1px solid var(--stamp); border-radius: 6px;
-  background: var(--stamp); color: #fff; cursor: pointer;
+  background: var(--stamp); color: var(--on-stamp); cursor: pointer;
 }
 button:hover { filter: brightness(1.1); }
 button:disabled { opacity: 0.5; cursor: default; filter: none; }
@@ -287,7 +392,7 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
   padding: 10px 14px; background: var(--surface);
   border-radius: 0 6px 6px 0; font-size: 14px; margin: 10px 0;
 }
-.notice--ok { border-left-color: var(--stamp); }
+.notice--ok { border-left-color: var(--ok); }
 .hint { color: var(--ink-muted); font-size: 13px; }
 .saving { font-size: 12px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
 
@@ -344,13 +449,13 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
   text-transform: uppercase; color: var(--ink-faint); }
 .payable {
   font-family: var(--mono); font-variant-numeric: tabular-nums;
-  font-size: 32px; font-weight: 600; color: var(--stamp); letter-spacing: -0.02em;
+  font-size: 32px; font-weight: 600; color: var(--ink); letter-spacing: -0.02em;
 }
 
 /* ---- motion -------------------------------------------------------------- */
 /* The one animation: a derived cell flashes when an upstream edit reaches it. */
 @keyframes settle {
-  from { background: color-mix(in srgb, var(--stamp) 20%, transparent); }
+  from { background: color-mix(in srgb, var(--ok) 22%, transparent); }
   to { background: transparent; }
 }
 .settled { animation: settle 400ms ease-out; border-radius: 3px; }
@@ -373,6 +478,121 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
   .spinner { animation: pulse 1.4s ease-in-out infinite; }
 }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+/* ---- status ------------------------------------------------------------- */
+/**
+ * One vocabulary for state, used by the contracts list, the rail and the
+ * problem list alike: settled, provisional, or not started yet.
+ */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+  padding: 2px 9px 2px 7px; border-radius: 999px;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.pill::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor; flex: none;
+}
+.pill--ok    { color: var(--ok);        background: var(--ok-wash);        border-color: color-mix(in srgb, var(--ok) 25%, transparent); }
+.pill--warn  { color: var(--warn);      background: var(--warn-wash);      border-color: color-mix(in srgb, var(--warn) 25%, transparent); }
+.pill--idle  { color: var(--ink-faint); background: var(--sunk);           border-color: var(--rule); }
+
+/* ---- derived surfaces --------------------------------------------------- */
+/**
+ * The whole premise of this application is that two things are typed and
+ * everything else falls out of them. A panel you fill in is white; a panel that
+ * computes sits on --sunk and says so, so no one types into a figure that is
+ * only ever a result.
+ */
+/* Every panel on a stage that only ever computes. The bill itself is exempt:
+   it is a paper document, and paper is white. */
+.derived .panel { background: var(--sunk); }
+.derived-mark {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+.derived-mark::before { content: '\003D'; font-family: var(--mono); font-weight: 400; }
+
+/* ---- problems ----------------------------------------------------------- */
+/**
+ * The engine already knows what is wrong and which months it concerns. This is
+ * the path from knowing to fixing: every problem is a link to the stage that
+ * owns it, and a rates gap carries its months through to the grid.
+ */
+.problems { display: grid; gap: 1px; background: var(--rule); border-radius: 8px; overflow: hidden; }
+.problem {
+  display: grid; gap: 3px; padding: 9px 11px;
+  background: var(--surface); text-decoration: none; color: var(--ink);
+  font-size: 12.5px; line-height: 1.45;
+}
+.problem:hover { background: var(--warn-wash); }
+.problem__where {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--warn);
+  display: flex; align-items: baseline; gap: 6px;
+}
+.problem__where::after { content: '\2192'; font-weight: 400; }
+.problem__months { font-family: var(--mono); font-size: 11px; color: var(--ink-muted); }
+
+/* The rail's count, when it is a control rather than a note. */
+.rail-total__more {
+  appearance: none; font: inherit; font-size: 11px; font-weight: 500;
+  background: none; border: 0; padding: 0; margin-top: 3px;
+  color: var(--warn); cursor: pointer; text-align: left;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.rail-total__more:hover { filter: none; }
+
+/* ---- stage rail state --------------------------------------------------- */
+/* A stage held up by an outstanding problem, as against one merely not reached. */
+.stage--blocked .stage__number {
+  border-color: var(--warn); color: var(--warn); background: var(--warn-wash);
+}
+
+/* ---- theme -------------------------------------------------------------- */
+.theme-toggle {
+  appearance: none; font: inherit; font-size: 12px;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 9px; border-radius: 6px; cursor: pointer;
+  background: var(--surface); color: var(--ink-muted);
+  border: 1px solid var(--rule);
+}
+.theme-toggle:hover { filter: none; border-color: var(--rule-strong); color: var(--ink); }
+.theme-toggle__dot {
+  width: 11px; height: 11px; border-radius: 50%; flex: none;
+  border: 1px solid var(--rule-strong);
+  background: linear-gradient(135deg, var(--ink) 0 50%, var(--surface) 50% 100%);
+}
+
+/* ---- empty states ------------------------------------------------------- */
+/* An empty screen is an invitation, so it says what to do next, not that it is empty. */
+.empty { display: grid; gap: 6px; justify-items: start; padding: 26px 20px; }
+.empty__title { font-family: var(--serif); font-size: 17px; font-weight: 600; }
+.empty__body { color: var(--ink-muted); font-size: 14px; margin: 0; max-width: 46ch; }
+
+/* ---- rates grid marking ------------------------------------------------- */
+/* A month this bill depends on, so the shared chart shows what is load-bearing. */
+td.month--needed { box-shadow: inset 2px 0 0 var(--stamp); font-weight: 500; }
+/* A cell the calculation asked for and did not find. */
+.cell--missing { background: var(--warn-wash); }
+table.grid tbody tr:hover .cell--missing { background: var(--warn-wash); }
+
+/* Two lines in one cell, where the second is subordinate to the first. */
+.cell-sub { display: block; font-size: 12px; color: var(--ink-muted); margin-top: 1px; }
+
+/* ---- inline confirm ----------------------------------------------------- */
+/**
+ * Destructive actions that need saying out loud stay on the row instead of in a
+ * browser confirm() - the rates chart is shared, and a dialog that appears over
+ * the page cannot show which row is about to go.
+ */
+.confirm {
+  display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  justify-content: flex-end; font-size: 12px; color: var(--recovery);
+}
+.confirm__text { max-width: 30ch; text-align: right; line-height: 1.35; }
 
 /* ---- responsive ---------------------------------------------------------- */
 @media (max-width: 820px) {
@@ -398,19 +618,11 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
 
   .stage-rail { flex-direction: row; overflow-x: auto; gap: 4px; }
   .stage { white-space: nowrap; }
+  /* The problem list would push the whole rail past a phone screen. */
+  .problems { display: none; }
+  .confirm { justify-content: flex-start; }
+  .confirm__text { text-align: left; }
   .rail-foot { grid-auto-flow: column; justify-content: start; align-items: center; gap: 16px; margin-top: 0; }
-
-  /* Hold the row's label still while the figures scroll under it. Each sticky
-     cell needs an opaque background of its own, or the columns sliding beneath
-     show straight through it -- the body takes the row's colour, while the
-     head and foot keep the one they already paint. */
-  table.grid tbody td:first-child {
-    position: sticky; left: 0; z-index: 1; background: inherit;
-  }
-  table.grid thead th:first-child { position: sticky; left: 0; z-index: 3; }
-  table.grid tfoot td:first-child {
-    position: sticky; left: 0; z-index: 1; background: var(--surface);
-  }
 
   /* Under 16px iOS zooms the page when an input takes focus, and on a grid
      this wide that loses the reader's place entirely. */

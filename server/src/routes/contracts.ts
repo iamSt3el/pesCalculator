@@ -1,9 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { listContractSummaries } from '../assemble.ts';
 import { requireAuth } from '../auth/middleware.ts';
 import { calculationRouter } from './calculation.ts';
 import {
-  contractOwnerId, createContract, deleteContract, getContract, listContracts,
+  contractOwnerId, createContract, deleteContract, getContract,
   replaceAdjustments, replaceComponents, replaceProgress, updateContract,
 } from '../repo/contracts.ts';
 
@@ -56,7 +57,7 @@ const parseId = (raw: string | undefined): number | null => {
 };
 
 contractsRouter.get('/', async (req, res) => {
-  res.json(await listContracts(req.session.user!.id));
+  res.json(await listContractSummaries(req.session.user!.id));
 });
 
 contractsRouter.post('/', async (req, res) => {

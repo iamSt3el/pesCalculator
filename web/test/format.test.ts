@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  formatRupees, formatComponentIndex, formatIndex, formatMonth, rupeesInWords,
+  formatRupees, formatComponentIndex, formatIndex, formatMonth, formatWhen, rupeesInWords,
 } from '../src/format.ts';
 
 test('formatRupees groups digits the Indian way', () => {
@@ -56,4 +56,17 @@ test('rupeesInWords writes the rupees and the paise on the Indian scale', () => 
   assert.equal(rupeesInWords(0.5), 'Fifty paise only');
   assert.equal(rupeesInWords(0), 'zero rupees only');
   assert.equal(rupeesInWords(-18_356.05), 'minus Eighteen thousand three hundred fifty-six rupees and five paise only');
+});
+
+test('formatWhen prefers a distance for the recent past and a date beyond it', () => {
+  const now = new Date('2026-08-31T10:00:00');
+  assert.equal(formatWhen('2026-08-31T09:00:00', now), 'today');
+  assert.equal(formatWhen('2026-08-30T23:00:00', now), 'yesterday');
+  assert.equal(formatWhen('2026-08-28T09:00:00', now), '3 days ago');
+  assert.equal(formatWhen('2026-08-01T09:00:00', now), '01-Aug-2026');
+});
+
+test('formatWhen says nothing rather than guessing when there is no timestamp', () => {
+  assert.equal(formatWhen(''), '—');
+  assert.equal(formatWhen('not a date'), '—');
 });

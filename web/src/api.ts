@@ -89,7 +89,14 @@ export interface Contract {
 
 export interface ProgressRow { month: string; spanDays: [number, number, number, number] }
 export interface AdjustmentRow { month: string; adjustment: number }
-export interface ContractSummary { id: number; agreementNo: string; contractor: string; workName: string }
+export interface ContractSummary {
+  id: number; agreementNo: string; contractor: string; workName: string;
+  updatedAt: string;
+  /** null until the contract has been given enough to compute anything. */
+  payable: number | null;
+  problemCount: number;
+  status: 'ready' | 'provisional' | 'blank';
+}
 
 export interface ContractBundle {
   contract: Contract;
