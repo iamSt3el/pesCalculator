@@ -340,6 +340,20 @@ table.grid tfoot td:first-child {
   position: sticky; left: 0; z-index: 1; background: var(--surface);
 }
 
+/**
+ * The totals row, pinned to the bottom of a scrolling grid. "Days allocated
+ * 118 / 120" is the target you are filling against, and on a two-year contract
+ * it sat thirty rows below where you were typing.
+ *
+ * Only inside .scroller, which is the wrapper that actually clips. The corner
+ * cell is sticky on both axes at once and needs the higher layer, or the
+ * columns sliding under it come through.
+ */
+.scroller table.grid tfoot td {
+  position: sticky; bottom: 0; z-index: 2; background: var(--surface);
+}
+.scroller table.grid tfoot td:first-child { z-index: 3; }
+
 .scroller { overflow: auto; max-height: 70vh; }
 .scroller--short { max-height: none; overflow-x: auto; }
 /**
@@ -788,11 +802,3 @@ table.grid tbody tr:hover .cell--missing { background: var(--warn-wash); }
   .grid-fields { grid-template-columns: 1fr; }
   .shell__main { padding: 16px 12px 48px; }
 }
-
-/* ---- disclosure ---------------------------------------------------------- */
-details > summary {
-  list-style: none; color: var(--accent); font-weight: 500;
-}
-details > summary::-webkit-details-marker { display: none; }
-details > summary::before { content: '+ '; font-family: var(--mono); }
-details[open] > summary::before { content: '− '; }

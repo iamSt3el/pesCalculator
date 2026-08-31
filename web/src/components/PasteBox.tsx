@@ -2,7 +2,13 @@ import { useState, type FormEvent } from 'react';
 import { api } from '../api.ts';
 import { submitPaste, type PasteOutcome } from '../paste.ts';
 
+/**
+ * This application replaces a workbook, so pasting rows straight out of Excel
+ * is the main way the rates chart gets filled — not a footnote. It used to be
+ * folded inside a collapsed <details> that most operators never opened.
+ */
 export function PasteBox({ onDone }: { onDone: () => void }) {
+  const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<PasteOutcome | null>(null);
@@ -17,42 +23,49 @@ export function PasteBox({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <details className="panel" style={{ marginBottom: 16 }}>
-      <summary style={{ cursor: 'pointer', fontSize: 14 }}>
-        Paste rows copied from Excel
-      </summary>
-      <form onSubmit={submit} style={{ marginTop: 14 }}>
-      <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4}
-                style={{ width: '100%', fontFamily: 'var(--mono)', fontSize: 13 }}
-                placeholder={'2023-07\t130.0\t99.1\t98.1\t91.5\t89.1\t38472\t36972'} />
-      <p className="hint" style={{ margin: '6px 0 10px' }}>
-        Column order: Month · Labour · Material · Cement · Steel · POL · Bitumen 1st · Bitumen 2nd
-      </p>
-      <button type="submit" disabled={busy || !text.trim()}>
-        {busy ? 'Adding…' : 'Add months'}
+    <div className="panel bar">
+      <button type="button" className="ghost" aria-expanded={open} onClick={() => setOpen(!open)}>
+        {open ? 'Close paste box' : 'Paste rows copied from Excel'}
       </button>
 
-      {result && (
-        <>
-          {result.failure && (
-            <p className="notice">
-              <strong>Those months could not be added.</strong> {result.failure}
-            </p>
+      {open && (
+        <form onSubmit={submit} className="stack-md">
+          <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4}
+                    className="paste-area"
+                    placeholder={'2023-07\t130.0\t99.1\t98.1\t91.5\t89.1\t38472\t36972'} />
+          <p className="hint stack-sm">
+            Column order: Month · Labour · Material · Cement · Steel · POL · Bitumen 1st · Bitumen 2nd
+          </p>
+          <button type="submit" disabled={busy || !text.trim()}>
+            {busy ? 'Adding…' : 'Add months'}
+          </button>
+
+          {result && (
+            <>
+              {result.failure && (
+                <p className="notice">
+                  <strong>Those months could not be added.</strong> {result.failure}
+                </p>
+              )}
+              {result.written > 0 && (
+                <p className="notice notice--ok">
+                  Added {result.written} month{result.written === 1 ? '' : 's'}.
+                </p>
+              )}
+              {result.errors.length > 0 && (
+                <div className="notice">
+                  <strong>
+                    {result.errors.length} line{result.errors.length === 1 ? '' : 's'} could not be read.
+                  </strong>
+                  <ul className="errors">
+                    {result.errors.map((e) => <li key={e}>{e}</li>)}
+                  </ul>
+                </div>
+              )}
+            </>
           )}
-          {result.written > 0 && (
-            <p className="notice notice--ok">Added {result.written} month{result.written === 1 ? '' : 's'}.</p>
-          )}
-          {result.errors.length > 0 && (
-            <div className="notice">
-              <strong>{result.errors.length} line{result.errors.length === 1 ? '' : 's'} could not be read.</strong>
-              <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
-                {result.errors.map((e) => <li key={e}>{e}</li>)}
-              </ul>
-            </div>
-          )}
-        </>
+        </form>
       )}
-      </form>
-    </details>
+    </div>
   );
 }
