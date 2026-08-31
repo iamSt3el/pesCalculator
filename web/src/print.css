@@ -1,12 +1,32 @@
 /* On screen the three sheets read as one scrolling document, separated by a
    rule; on paper each one starts its own page. */
+.sheet { display: flex; flex-direction: column; }
+.sheet__body { flex: 1; }
 .sheet + .sheet {
-  margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--rule);
+  margin-top: var(--s6); padding-top: var(--s6); border-top: 1px solid var(--rule);
 }
 .sheet__title {
-  font-size: 15px; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--ink-muted); margin: 0 0 14px;
+  font-size: var(--t-body); text-transform: uppercase; letter-spacing: 0.13em;
+  color: var(--ink-muted); margin: 0 0 var(--s4);
 }
+
+/**
+ * Page furniture. `@page { margin: 0 }` below suppresses the browser's own
+ * header strip — deliberately, so Chrome cannot draw a URL across the sheet —
+ * and until now nothing replaced it: three sheets came off the printer with no
+ * page numbers and no date of preparation.
+ */
+.sheet-head, .sheet-foot {
+  display: flex; justify-content: space-between; gap: var(--s4);
+  font-family: var(--sans); font-size: var(--t-small); color: var(--ink-muted);
+}
+.sheet-head {
+  border-bottom: 1px solid var(--rule); padding-bottom: var(--s2); margin-bottom: var(--s4);
+}
+.sheet-foot {
+  border-top: 1px solid var(--rule); padding-top: var(--s2); margin-top: var(--s5);
+}
+.sheet-head strong { color: var(--ink); }
 
 @media print {
   /**
@@ -26,7 +46,31 @@
     --recovery: #000000; --recovery-wash: #FFFFFF;
   }
 
-  .shell__nav, button, .no-print { display: none !important; }
+  .shell__nav, button, .no-print, .running-head { display: none !important; }
+
+  /**
+   * Sticky is a screen affordance. Left in place across a page break it
+   * hazards the split, and it is what stops thead repeating reliably.
+   */
+  table.grid thead th,
+  table.grid thead th:first-child,
+  table.grid tbody td:first-child,
+  .scroller table.grid tfoot td,
+  .scroller table.grid tfoot td:first-child,
+  table.grid tfoot td:first-child {
+    position: static !important;
+  }
+  thead { display: table-header-group; }
+  tfoot { display: table-row-group; }
+
+  /* A row cut in half by a page break is unreadable, and unfileable. */
+  tr, .sign, .sheet-head, .sheet-foot, .quarter { break-inside: avoid; }
+
+  /* Screen chrome does not print: these are ruled tables, not cards. */
+  .panel {
+    border: none !important; border-radius: 0 !important;
+    background: none !important; padding: 0 !important;
+  }
   .shell { display: block; }
   body { background: #fff; }
   /* The sheet's margin lives here rather than in @page, so that @page can be
@@ -38,14 +82,36 @@
   .report .paper.paper { border: none; border-radius: 0; padding: 0; }
   .report { color: #000; }
   .report .component { break-inside: avoid; }
-  .formula-block { overflow: visible; }
+  /**
+   * The formula block is fifteen columns of monospace and, at the screen's
+   * 12.5px, the widest line of Agreement 168 measures ~709px against the
+   * ~688px of usable width on A4 at 14mm margins. Since print sets overflow
+   * visible, that excess would run off the sheet rather than scroll.
+   *
+   * The widest lines are bitumen: its index is a rupee rate per tonne, so it
+   * carries grouping and paise where the other five carry two decimals.
+   *
+   * 11.5px with tightened operator gutters brings the same line to ~624px.
+   */
+  .formula-block { overflow: visible; font-size: 11.5px; }
+  .f-period { padding-right: 10px; }
+  .f-n { padding-left: 4px; }
+  .f-op { padding: 7px 3px; }
+  .f-paren { padding-left: 3px; }
+  .f-amount { padding-left: 16px; }
 
   /* One stage per sheet. The last takes no break after it, or printers that
      honour it emit a trailing blank page. */
   .sheet { break-after: page; }
+  /* Fill the page so the foot lands at its bottom, not under whatever content
+     happened to end. 32mm is the 16mm top and bottom padding on .shell__main. */
+  .sheet { min-height: calc(297mm - 32mm); }
   .sheet--last { break-after: auto; }
   .sheet + .sheet { margin-top: 0; padding-top: 0; border-top: none; }
   .sheet__title { color: #000; }
+  .sheet-head, .sheet-foot { color: #333; }
+  .sheet-head { border-bottom-color: #999; }
+  .sheet-foot { border-top-color: #999; }
   /* A scrolling box clips its overflow on paper — let the tables run on. */
   .scroller, .scroller--short { max-height: none !important; overflow: visible !important; }
 
