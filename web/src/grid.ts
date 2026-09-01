@@ -90,8 +90,24 @@ export function useGridKeys(rowCount: number, colCount: number): {
       }
     }
 
+    /**
+     * Consuming the key and landing on a cell are two different questions, and
+     * this used to prevent the default only when the move succeeded. At the
+     * edge of the grid there is nowhere to land, so the press fell through to
+     * the browser — and `input type=number` answers ArrowUp by stepping its
+     * value. Pressing up on the top row of the payment schedule wrote 0.01
+     * into an empty rupee cell, pressing down on the last row turned
+     * −8,00,000 into −8,00,000.01, and the debounced saver wrote both to the
+     * database. The operator's report was that navigation "sometimes changes
+     * the value"; sometimes meant at the first and last row.
+     *
+     * A key the grid claims is the grid's, whether or not there is a cell to
+     * move to. Off the end, the right answer is to stay put and do nothing.
+     */
     const move = nextCell(e.key, r, c, edges, isInput);
-    if (move && focusCell(move.r, move.c)) e.preventDefault();
+    if (!move) return;
+    focusCell(move.r, move.c);
+    e.preventDefault();
   };
 
   return { grid, onKeyDown };

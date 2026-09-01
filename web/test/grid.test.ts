@@ -66,3 +66,25 @@ test('nextCell ignores keys that are not navigation', () => {
   assert.equal(nextCell('a', 2, 3, BOTH, true), null);
   assert.equal(nextCell('Tab', 2, 3, BOTH, true), null);
 });
+
+/**
+ * Claiming a key and landing on a cell are two different questions, and the
+ * whole grid depends on them staying separate.
+ *
+ * At the edge of the grid nextCell still returns a move — an out-of-bounds one.
+ * That non-null is the caller's signal that the key belongs to the grid and
+ * must be swallowed. Teach nextCell about the bounds and return null here
+ * instead, and ArrowUp on the top row falls through to the browser, where
+ * `input type=number` answers it by stepping the figure: an operator moving up
+ * a column silently wrote 0.01 into a rupee cell of a bill, and the debounced
+ * save put it in the database.
+ */
+test('nextCell claims a vertical arrow at the edge of the grid, out of bounds and all', () => {
+  assert.deepEqual(nextCell('ArrowUp', 0, 2, BOTH, true), { r: -1, c: 2 });
+  assert.deepEqual(nextCell('ArrowDown', 5, 2, BOTH, true), { r: 6, c: 2 });
+});
+
+test('nextCell claims a horizontal arrow at the edge of the grid too', () => {
+  assert.deepEqual(nextCell('ArrowLeft', 2, 0, BOTH, true), { r: 2, c: -1 });
+  assert.deepEqual(nextCell('ArrowRight', 2, 3, BOTH, true), { r: 2, c: 4 });
+});

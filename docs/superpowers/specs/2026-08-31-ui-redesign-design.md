@@ -211,6 +211,26 @@ caret while there is text to move through — is extracted from `RatesChartPage.
 
 The hook's behaviour is not changed. It is correct; it was simply trapped in one file.
 
+> **Amended 2026-09-01, on the operator's report that arrow-key navigation "sometimes
+> changes the value".** It was not correct, and extracting it unchanged carried the defect
+> from one grid into five.
+>
+> `useGridKeys` called `preventDefault()` only when the move *landed* — `if (move &&
+> focusCell(...))`. At the edge of a grid there is no cell to land on, so the press fell
+> through to the browser, and `input type=number` answers ArrowUp by stepping its value.
+> Sweeping every edge of every grid on Agreement 168 changed a figure **fifteen times**:
+> ArrowUp on the top row turned a 9.28% share into 9.29, ArrowDown on the last row turned
+> −8,00,000 into −8,00,000.01, and pressing up on an empty cell wrote 0.01 into it. The
+> debounced saver then put each one in the database. Only the first and last row of a grid
+> are affected, which is what "sometimes" meant.
+>
+> **Claiming a key and landing on a cell are two different questions.** A key the grid
+> claims is the grid's, whether or not there is a cell to move to; off the end, the right
+> answer is to stay put and do nothing. `nextCell` deliberately knows nothing about the
+> bounds and returns an out-of-bounds move — that non-null *is* the signal to swallow the
+> key, and `grid.test.ts` now pins it, because teaching `nextCell` the bounds and returning
+> null at an edge looks like a tidy-up and would silently restore the defect.
+
 `ComponentTable` mixes `<input>` and `<select>` in one row, so the extracted hook must
 match both rather than `input[data-r]` alone.
 
