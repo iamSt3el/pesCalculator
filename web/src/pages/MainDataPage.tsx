@@ -32,10 +32,17 @@ export function MainDataPage() {
     saver.schedule(next);
   };
 
+  /**
+   * The printed span is not a duplicate. An `<input>` cannot wrap, so on paper
+   * it clips whatever does not fit its box — the contractor's name came off
+   * the printer as "M/s. Pradeep Kumar Contracto". The span wraps, and the
+   * control it replaces is hidden by print.css.
+   */
   const text = (key: TextKey, label: string, wide = false) => (
     <label className="field" style={wide ? { gridColumn: '1 / -1' } : undefined}>
       {label}
       <input value={form[key]} onChange={(e) => set({ [key]: e.target.value } as Partial<Contract>)} />
+      <span className="print-only field__printed">{form[key] || '—'}</span>
     </label>
   );
 
@@ -66,7 +73,9 @@ export function MainDataPage() {
              onChange={(e) => set({
                [key]: money ? toPaise(e.target.value) : Number(e.target.value),
              } as Partial<Contract>)} />
-      {money && <span className="echo echo--num">₹{formatRupees(form[key])}</span>}
+      {money
+        ? <span className="echo echo--num">₹{formatRupees(form[key])}</span>
+        : <span className="print-only field__printed num">{form[key]}</span>}
     </label>
   );
 

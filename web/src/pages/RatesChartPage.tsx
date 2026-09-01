@@ -4,7 +4,7 @@ import { api, type RateRow } from '../api.ts';
 import { PasteBox } from '../components/PasteBox.tsx';
 import { PrintButton } from '../components/PrintButton.tsx';
 import { useContract, useReportSave } from '../ContractLayout.tsx';
-import { formatMonth } from '../format.ts';
+import { formatComponentIndex, formatMonth } from '../format.ts';
 import { useGridKeys } from '../grid.ts';
 import { useDebouncedSave } from '../hooks.ts';
 import { furtherMonths, neededMonths, nextMonthAfter } from '../months.ts';
@@ -137,8 +137,9 @@ export function RatesChartPage() {
         </div>
       )}
 
-      {/* Above the grid, not buried under 39 rows of it. */}
-      <div className="panel bar">
+      {/* Above the grid, not buried under 39 rows of it. A tool for filling the
+          chart, so it belongs on screen only — a printed chart is the figures. */}
+      <div className="panel bar no-print">
         <div className="spread spread--baseline">
           <p className="eyebrow flush">Months not in the chart yet</p>
           <span className="hint">
@@ -199,11 +200,20 @@ export function RatesChartPage() {
                   <td key={c.field}
                       className={gaps.has(row.month) && row[c.field] === null
                         ? 'cell--missing' : undefined}>
-                    <input className="cell" type="number" step="0.01"
+                    <input className="cell no-print" type="number" step="0.01"
                            data-r={r} data-c={i} onKeyDown={onKeyDown}
                            value={row[c.field] ?? ''} placeholder="—"
                            aria-label={`${c.label}, ${formatMonth(row.month)}`}
                            onChange={(e) => update(row.month, c.field, e.target.value)} />
+                    {/* Paper carries the figure as the rest of the application
+                        writes it. The control holds the digits as typed —
+                        48232 where the bill prints 48,232.00 — and a chart
+                        filed beside a bill has to agree with it. */}
+                    <span className="print-only num">
+                      {row[c.field] === null ? '' : formatComponentIndex(
+                        row[c.field], c.field.startsWith('bitumen') ? 'bitumen' : c.field,
+                      )}
+                    </span>
                   </td>
                 ))}
                 <td className="r no-print">

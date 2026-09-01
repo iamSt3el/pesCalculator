@@ -11,6 +11,9 @@
   padding: 0; text-align: left; font-weight: 400; vertical-align: top;
 }
 .sheet + .sheet { margin-top: var(--s6); }
+/* A working stage's furniture is for paper only — the running head already
+   names the contract on screen, and a second copy would just be noise. */
+.sheet--stage > thead, .sheet--stage > tfoot { display: none; }
 .sheet + .sheet > thead > tr > th {
   padding-top: var(--s6); border-top: 1px solid var(--rule);
 }
@@ -98,21 +101,40 @@
   table.grid thead { display: table-header-group; }
   table.grid tfoot { display: table-row-group; }
 
-  /* A row cut in half by a page break is unreadable, and unfileable. */
-  tr, .sign, .sheet-head, .sheet-foot, .quarter { break-inside: avoid; }
+  /**
+   * A row cut in half by a page break is unreadable, and unfileable.
+   *
+   * Scoped to the data tables, and that scope is load-bearing. A bare `tr`
+   * also matched the one row a .sheet is built from — the row holding the
+   * entire document — and told the browser not to break inside it. Chrome
+   * ignores an impossible avoid and paginates anyway; Firefox honours it as
+   * far as it can, and started the row on a fresh page, leaving the first
+   * carrying a head, a foot and nothing else. That is the empty page in the
+   * middle of the filed bill: three sheets printed as five pages in Firefox
+   * while printing as four in Chrome.
+   */
+  table.grid tr,
+  .sign, .sheet-head, .sheet-foot, .quarter { break-inside: avoid; }
 
   /* Screen chrome does not print: these are ruled tables, not cards. */
   .panel {
     border: none !important; border-radius: 0 !important;
     background: none !important; padding: 0 !important;
   }
-  .shell { display: block; }
+  /* min-height: 100vh is how the rail reaches the bottom of a short screen.
+     In print a vh is a page, so the shell was never allowed to be shorter than
+     one — a stage whose content half-filled a page still emitted a second,
+     entirely blank one. Firefox printed it; Chrome absorbed it, which is why
+     it went unseen. */
+  .shell { display: block; min-height: 0; }
   body { background: #fff; }
-  .shell__main { max-width: none !important; padding: 0 !important; }
+  .shell__main { max-width: none !important; }
   /* The side margins. Horizontal padding is not fragmented, so unlike the
      vertical margin below it applies on every page from one declaration.
-     14mm each side leaves the 182mm the formula block is measured against. */
-  .report { padding: 0 14mm; }
+     14mm each side leaves the 182mm the formula block is measured against.
+     On .shell__main rather than on .report, so that the working stages get it
+     too: they have no .report wrapper, and printed edge to edge without it. */
+  .shell__main { padding: 0 14mm !important; }
   /* Doubled class only to outrank the screen card: this file is bundled
      before styles.css, so at equal specificity the screen rule would win. */
   .report .paper.paper { border: none; border-radius: 0; padding: 0; }
@@ -154,6 +176,10 @@
    */
   .sheet > thead > tr > th { padding-top: 14mm; }
   .sheet > tfoot > tr > td { padding-bottom: 14mm; }
+  /* Hidden on screen, restored here — and as the repeating groups, not as
+     plain rows, or they would print once instead of on every page. */
+  .sheet--stage > thead { display: table-header-group; }
+  .sheet--stage > tfoot { display: table-footer-group; }
   .sheet--last { break-after: auto; }
   /* Each sheet already starts its own page; the screen's separating rule and
      the space above it would only print as a scar at the top of one. */
@@ -161,6 +187,61 @@
   .sheet + .sheet > thead > tr > th { padding-top: 14mm; border-top: none; }
   .sheet__title { color: #000; }
   .sheet-head, .sheet-foot { color: #333; }
+  /**
+   * The gaps around the running head and foot are screen rhythm; on paper the
+   * hairline already does the separating, and the space is charged against
+   * every page's content budget. It is worth reclaiming because the margin
+   * between "fits" and "one more sheet of paper" is thin: the Base Rate stage
+   * overran its page by three pixels and printed a second sheet carrying a
+   * head, a foot and nothing else.
+   */
+  .sheet-head { margin-bottom: var(--s3); }
+  .sheet-foot { margin-top: var(--s3); }
+  /* Trailing space at the end of a sheet buys nothing and can cost a page. */
+  .sheet__body > :last-child { margin-bottom: 0; padding-bottom: 0; }
+  /* The '=' badge marks a derived stage on screen. The sentence under the
+     heading says the same thing in words, which is what paper wants. */
+  .derived-mark { display: none; }
+
+  /**
+   * A filed page records the figure, never the means of changing it. The
+   * working stages printed their form: Main Data came off the printer as a
+   * page of boxes, the shares table carried a dropdown arrow beside every
+   * rule, and empty cells printed their 'auto' and '—' placeholders.
+   *
+   * The controls keep their values and lose their chrome, so each one reads as
+   * the text it holds.
+   */
+  input, select, textarea {
+    border-color: transparent !important;
+    background: none !important;
+    color: #000 !important;
+    appearance: none; -webkit-appearance: none;
+  }
+  /* A placeholder is a prompt to type. On paper an empty cell is empty. */
+  input:placeholder-shown, textarea:placeholder-shown { visibility: hidden; }
+
+  /**
+   * Two kinds of field cannot simply lose their chrome.
+   *
+   * A date input renders in whatever order the reader's browser is set to —
+   * a September bid printed as 09/12/2023 on a US-configured machine — and no
+   * stylesheet can reorder it. A money input holds the digits as typed,
+   * 23977779, where every other figure on the page is grouped.
+   *
+   * Both already carry the right form underneath, in the echo the screen shows
+   * for exactly this reason. On paper the echo becomes the value and the
+   * control steps aside.
+   */
+  .field:has(> .echo) > input,
+  .field:has(> .field__printed) > input { display: none; }
+  .field > .field__printed { font-size: var(--t-body); color: #000; }
+  .field > .field__printed.num { text-align: left; }
+  .field > .echo {
+    font-size: var(--t-body); color: #000; min-height: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .field > .echo--num { font-family: var(--mono); }
   .provisional-band { border-color: #000; }
   .provisional-band__word, .provisional-band__detail { color: #000; }
   .sheet-head { border-bottom-color: #999; }
@@ -219,6 +300,11 @@
      quarter totals printed their headings on one page and their amounts on the
      next. */
   .quarter-cell, .bill-total, .bill-total__final { break-inside: avoid; }
+
+  /* A heading belongs with what it heads. 'Work done, month by month' printed
+     at the foot of one page with its table on the next. */
+  h1, h2, h3, .title, .eyebrow, .section-head { break-after: avoid; }
+  .subtitle { break-before: avoid; break-after: avoid; }
 
   @page { size: A4; margin: 0; }
 }

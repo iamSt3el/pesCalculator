@@ -413,6 +413,63 @@ backgrounds" setting being ticked and dithers on a mono laser.
 
 All three are ink on paper. No tint, no background graphic, no browser setting required.
 
+### 7.5 The working stages, and two engines
+
+*Added 2026-09-01, on the operator's report that the other pages "look like this" and that
+an empty page was still coming through in the filed bill.*
+
+**Every stage prints through the same furniture as the filed set.** The page margin was
+carried by `SheetFurniture`, and only the Print bill page had any, so Main Data, the Rates
+Chart, Index Average, Base Rate and Calculation printed with a zero margin on all four
+sides — `@page { margin: 0 }` and nothing to replace it. `Shell` now wraps every stage in
+one sheet of furniture, hidden on screen where the running head already names the contract.
+A page run off from any stage carries 14mm of clear paper on every side, the agreement
+number and contractor at its head, and the stage's own name with the date of preparation at
+its foot. Print bill is excluded: it renders three sheets of its own.
+
+**A filed page records the figure, never the means of changing it** — the rule §7.2 already
+states for the Schedule of payment, applied where it was still being broken:
+
+- Main Data printed as a page of boxes. Controls now lose their chrome and read as the
+  values they hold, and a `<select>` loses its arrow.
+- A date input renders in whatever order the reader's browser is set to — a September bid
+  printed `09/12/2023` on a US-configured machine — and a money input holds the digits as
+  typed, `23977779`, where every other figure on the page is grouped. Both already carry
+  the right form in the echo the screen shows beneath them; on paper the echo becomes the
+  value and the control steps aside.
+- A text input cannot wrap, so it clipped what did not fit: the contractor printed as
+  "M/s. Pradeep Kumar Contracto". Text and plain-number fields carry a printed span.
+- The Rates Chart printed `48232` where the bill prints `48,232.00`. A chart filed beside a
+  bill has to agree with it, so each cell carries the figure as `formatComponentIndex`
+  writes it.
+- Placeholders (`auto`, `—`) are prompts to type; an empty cell on paper is empty. The
+  month-adding panel and the Excel paste box are tools, and do not print at all.
+
+**Two engines, and the difference mattered.** Everything above §7.4 was verified in Chrome.
+The operator prints from Zen, which is Firefox, and Firefox printed the three-sheet bill as
+five pages where Chrome printed four. Verification now runs through both — Chrome over CDP
+`Page.printToPDF`, Firefox over WebDriver BiDi `browsingContext.print` — and they agree
+page for page on every stage, on a provisional bill, and on a 24-month contract.
+
+Two defects only Firefox showed:
+
+1. **A bare `tr { break-inside: avoid }`**, written for data-table rows, also matched the
+   single row a `.sheet` is built from — the row holding the entire document — and told the
+   browser not to break inside it. Chrome ignores an impossible avoid and paginates anyway;
+   Firefox honours it as far as it can and started the row on a fresh page, leaving the
+   previous one carrying a head, a foot and nothing else. That is the empty page in the
+   middle of the filed bill. The rule is now scoped to `table.grid tr`.
+2. **`.shell { min-height: 100vh }`**, never reset for print. In print a `vh` is a page, so
+   the shell could never be shorter than one: a stage whose content half-filled a page
+   emitted a second, entirely blank one. Firefox printed it; Chrome absorbed it.
+
+And one that both showed, once looked for: the Base Rate stage overran its page by **three
+pixels** and printed a second sheet holding only furniture. The gaps around the running head
+and foot are screen rhythm charged against every page's content budget, and print reclaims
+them. The window in which a sheet can still spill a furniture-only page is narrower, not
+closed — that is inherent to pagination — but the page that results identifies itself
+rather than being blank.
+
 ## 8. Files
 
 **New**
@@ -473,6 +530,8 @@ workbook to the paisa, and no part of this redesign may alter a figure.
 - Departmental signature blocks beyond the contractor (confirmed not required).
 - Adding DOM or visual-regression tests. Worth doing, but it is its own piece of work and
   bundling it here would double the size of this change.
-- Print output for the Rates Chart and Main Data stages. Those carry `PrintButton` today
+- ~~Print output for the Rates Chart and Main Data stages. Those carry `PrintButton` today
   and will continue to print acceptably, but the three-sheet filed set is what this
-  section designs.
+  section designs.~~ **Brought into scope 2026-09-01 — see §7.5.** "Will continue to print
+  acceptably" was never checked. They printed edge to edge on all four sides, with no
+  margin, nothing naming the contract, and their form controls in place of their figures.

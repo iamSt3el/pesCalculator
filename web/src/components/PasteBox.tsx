@@ -23,7 +23,8 @@ export function PasteBox({ onDone }: { onDone: () => void }) {
   }
 
   return (
-    <div className="panel bar">
+    // A way of getting figures in, not a record of them: screen only.
+    <div className="panel bar no-print">
       <button type="button" className="ghost" aria-expanded={open} onClick={() => setOpen(!open)}>
         {open ? 'Close paste box' : 'Paste rows copied from Excel'}
       </button>

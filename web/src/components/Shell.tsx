@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
-import { NavLink, useParams } from 'react-router-dom';
+import { NavLink, useLocation, useParams } from 'react-router-dom';
 import type { Calculation } from '../api.ts';
 import { formatRupees } from '../format.ts';
 import { blockedStages, type StageKey } from '../problems.ts';
 import type { StageReadiness } from '../readiness.ts';
 import { ProblemList } from './ProblemList.tsx';
 import { RunningHead } from './RunningHead.tsx';
+import { SheetFurniture } from './SheetFurniture.tsx';
 import { ThemeToggle } from './ThemeToggle.tsx';
 
 const STAGES: ReadonlyArray<{ to: string; label: string; key: StageKey }> = [
@@ -60,7 +61,24 @@ export function Shell({
   readiness, agreementNo, contractor, calculation, saving, error, onSignOut, children,
 }: Props) {
   const { id } = useParams();
+  const { pathname } = useLocation();
   const blocked = blockedStages(calculation?.problems ?? []);
+
+  /**
+   * Every working stage prints through the same furniture as the filed set, so
+   * a page run off from Index Average or the Rates Chart carries margins, says
+   * which contract it belongs to and when it was prepared. Without it those
+   * pages printed edge to edge on all four sides, with nothing naming them.
+   *
+   * Print bill is the exception: it renders three sheets of its own, and a
+   * fourth wrapped around them would nest furniture inside furniture.
+   */
+  // The segment after /c/:id, which is '' on Main Data. Compared this way
+  // rather than against the whole path, so that a trailing slash — /c/3/ is a
+  // URL anyone can arrive at — does not silently drop the furniture.
+  const stagePath = pathname.replace(/\/+$/, '').slice(`/c/${id}`.length).replace(/^\//, '');
+  const current = STAGES.find((s) => s.to === stagePath);
+  const framed = current !== undefined && current.key !== 'print';
 
   return (
     <div className="shell">
@@ -109,7 +127,17 @@ export function Shell({
           payable={calculation ? `₹${formatRupees(calculation.payable)}` : null}
           problemCount={calculation?.problems.length ?? 0}
         />
-        {children}
+        {framed ? (
+          <SheetFurniture
+            stage last
+            label={current.label}
+            agreementNo={agreementNo}
+            contractor={contractor}
+            problemCount={calculation?.problems.length ?? 0}
+          >
+            {children}
+          </SheetFurniture>
+        ) : children}
       </main>
     </div>
   );

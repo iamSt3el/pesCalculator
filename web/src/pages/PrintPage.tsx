@@ -6,6 +6,7 @@ import { ProvisionalBand } from '../components/ProvisionalBand.tsx';
 import { SheetFurniture } from '../components/SheetFurniture.tsx';
 import { useContract } from '../ContractLayout.tsx';
 import { formatRupees } from '../format.ts';
+import { sheetLabel } from '../sheets.ts';
 
 /**
  * The three derived stages as one document: index averages, then the base
@@ -57,19 +58,19 @@ export function PrintPage() {
         </div>
       )}
 
-      <SheetFurniture index={0} total={SHEETS} {...marks}>
+      <SheetFurniture label={sheetLabel(0, SHEETS)} {...marks}>
         <ProvisionalBand count={calculation.problems.length} />
         <h2 className="sheet__title">Index Average</h2>
         <IndexAverageTables />
       </SheetFurniture>
 
-      <SheetFurniture index={1} total={SHEETS} {...marks}>
+      <SheetFurniture label={sheetLabel(1, SHEETS)} {...marks}>
         <h2 className="sheet__title">Base Rate</h2>
         <BaseRateSummary rows={bundle.components} />
         <ScheduleTable />
       </SheetFurniture>
 
-      <SheetFurniture index={2} total={SHEETS} last {...marks}>
+      <SheetFurniture label={sheetLabel(2, SHEETS)} last {...marks}>
         <BillPaper showBand={false} />
       </SheetFurniture>
     </div>

@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
 import { formatDate } from '../format.ts';
-import { provisionalNotice, sheetLabel, todayIso } from '../sheets.ts';
+import { provisionalNotice, todayIso } from '../sheets.ts';
 
 /**
- * One sheet of the printed set, with the page furniture `@page { margin: 0 }`
- * takes away: who this bill belongs to at the top, and which sheet of how many
- * — with the date it was prepared — at the foot.
+ * One sheet of paper's worth of page furniture: who this bill belongs to at
+ * the top, and what the sheet is — with the date it was prepared — at the
+ * foot. `@page { margin: 0 }` takes all of that away, deliberately, so that
+ * Chrome cannot draw a URL strip across the sheet; this puts it back.
  *
  * It is a table, and that is not decoration. A sheet longer than one page used
  * to carry its head and foot on the first page only, and every page after it
@@ -13,30 +14,37 @@ import { provisionalNotice, sheetLabel, todayIso } from '../sheets.ts';
  * reach — the Steel and POL blocks of Agreement 168 printed 2mm from the top
  * edge. `thead` and `tfoot` are the one mechanism Chrome repeats on every page
  * of a fragmented box, so the head, the foot, and the 14mm of clear paper they
- * carry with them are now on every page of the sheet.
+ * carry with them are now on every page.
  *
  * `position: fixed` was tried and measured: Chrome repeats it, but places it
  * against the document rather than the page, so on page two the foot printed
  * near the top and the head near the bottom. It is not an option.
  *
- * Because each sheet is its own table, `Sheet n of m` stays true — the count
- * names the section, not the page.
+ * Used twice over. The filed set gives each of its three sheets one of these,
+ * labelled `Sheet 2 of 3` — the count names the section, not the page, which
+ * is why it stays true when a section runs to two pages. Every working stage
+ * is wrapped in one too, labelled with the stage's own name, so that a page
+ * printed from Index Average or the Rates Chart carries margins and says which
+ * contract it belongs to. On screen the stage's furniture is hidden: the
+ * running head already names the contract there.
  */
 export function SheetFurniture({
-  index, total, agreementNo, contractor, problemCount, last = false, children,
+  label, agreementNo, contractor, problemCount, last = false, stage = false, children,
 }: {
-  index: number;
-  total: number;
+  /** 'Sheet 2 of 3' in the filed set; the stage's name on a working page. */
+  label: string;
   agreementNo: string;
   contractor: string;
   problemCount: number;
   last?: boolean;
+  /** A working stage rather than a sheet of the filed set: hidden on screen. */
+  stage?: boolean;
   children: ReactNode;
 }) {
   const name = agreementNo || 'Untitled contract';
   const notice = provisionalNotice(problemCount);
   return (
-    <table className={`sheet${last ? ' sheet--last' : ''}`}>
+    <table className={`sheet${last ? ' sheet--last' : ''}${stage ? ' sheet--stage' : ''}`}>
       <thead>
         <tr>
           <th>
@@ -56,7 +64,7 @@ export function SheetFurniture({
           <td>
             <div className="sheet-foot">
               <span>{notice ?? name}</span>
-              <span>{sheetLabel(index, total)} · prepared {formatDate(todayIso())}</span>
+              <span>{label} · prepared {formatDate(todayIso())}</span>
             </div>
           </td>
         </tr>
