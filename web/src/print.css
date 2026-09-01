@@ -1,9 +1,18 @@
 /* On screen the three sheets read as one scrolling document, separated by a
-   rule; on paper each one starts its own page. */
-.sheet { display: flex; flex-direction: column; }
-.sheet__body { flex: 1; }
-.sheet + .sheet {
-  margin-top: var(--s6); padding-top: var(--s6); border-top: 1px solid var(--rule);
+   rule; on paper each one starts its own page.
+
+   A sheet is a one-column table so that its head and foot repeat on every page
+   it spans — see SheetFurniture. Here that structure is made invisible: the
+   cells give up the alignment and weight a table would otherwise impose. */
+.sheet { width: 100%; border-collapse: collapse; }
+.sheet > thead > tr > th,
+.sheet > tfoot > tr > td,
+.sheet > tbody > tr > td {
+  padding: 0; text-align: left; font-weight: 400; vertical-align: top;
+}
+.sheet + .sheet { margin-top: var(--s6); }
+.sheet + .sheet > thead > tr > th {
+  padding-top: var(--s6); border-top: 1px solid var(--rule);
 }
 .sheet__title {
   font-size: var(--t-body); text-transform: uppercase; letter-spacing: 0.13em;
@@ -83,8 +92,11 @@
   table.grid tfoot td:first-child {
     position: static !important;
   }
-  thead { display: table-header-group; }
-  tfoot { display: table-row-group; }
+  /* A data table's head repeats when the table splits; its totals row must not,
+     or every page ends in a total that is not yet true. Scoped to .grid: the
+     sheet's own thead and tfoot are the running furniture, and they repeat. */
+  table.grid thead { display: table-header-group; }
+  table.grid tfoot { display: table-row-group; }
 
   /* A row cut in half by a page break is unreadable, and unfileable. */
   tr, .sign, .sheet-head, .sheet-foot, .quarter { break-inside: avoid; }
@@ -96,14 +108,11 @@
   }
   .shell { display: block; }
   body { background: #fff; }
-  /* The page margin lives on each .sheet rather than in @page, so that @page
-     can be zero — Chrome draws its URL/title/date strip in the page margin,
-     and with no margin there is nowhere for it to go.
-     It sits on the sheet, not on this container: a container's padding applies
-     once at the very top and once at the very bottom of the whole document,
-     so a per-sheet height could not be reckoned against it, and every sheet
-     overran onto a blank second page. */
   .shell__main { max-width: none !important; padding: 0 !important; }
+  /* The side margins. Horizontal padding is not fragmented, so unlike the
+     vertical margin below it applies on every page from one declaration.
+     14mm each side leaves the 182mm the formula block is measured against. */
+  .report { padding: 0 14mm; }
   /* Doubled class only to outrank the screen card: this file is bundled
      before styles.css, so at equal specificity the screen rule would win. */
   .report .paper.paper { border: none; border-radius: 0; padding: 0; }
@@ -123,7 +132,7 @@
   .formula-block { overflow: visible; font-size: 11.5px; }
   .f-period { padding-right: 10px; }
   .f-n { padding-left: 4px; }
-  .f-op { padding: 7px 3px; }
+  .f-op { padding: 4px 3px; }
   .f-paren { padding-left: 3px; }
   .f-amount { padding-left: 16px; }
 
@@ -133,25 +142,23 @@
   /**
    * A sheet is a section, not a page. Agreement 168 proves the two are not the
    * same: Base Rate just overruns A4, and the Calculation needs two pages for
-   * six components.
+   * six components. So no min-height — forcing one pushed the foot of an
+   * over-long sheet onto a page of its own.
    *
-   * So no min-height. Forcing one pushed the foot of any over-long sheet onto
-   * a page of its own — a three-sheet bill printed as six pages, three of them
-   * blank but for a footer. The foot now sits directly under the content it
-   * closes, which is what a rule at the end of a section is for.
-   *
-   * The padding is the page margin, inside the box, because @page must stay at
-   * zero: Chrome draws its URL and date strip in the page margin, and with no
-   * margin there is nowhere for it to go.
+   * The top and bottom margins hang off the running head and foot, which is
+   * why they are in a thead and a tfoot: Chrome repeats those on every page a
+   * sheet spans, so the clear paper repeats with them. Held on the sheet box
+   * instead, as padding, it applied to the first page and the last page of the
+   * sheet only, and every page between began 2mm from the paper edge — inside
+   * the band a laser printer physically cannot put toner on.
    */
-  .sheet {
-    box-sizing: border-box;
-    padding: 16mm 14mm;
-  }
-  /* The body no longer stretches to push the foot down the page. */
-  .sheet__body { flex: none; }
+  .sheet > thead > tr > th { padding-top: 14mm; }
+  .sheet > tfoot > tr > td { padding-bottom: 14mm; }
   .sheet--last { break-after: auto; }
-  .sheet + .sheet { margin-top: 0; padding-top: 0; border-top: none; }
+  /* Each sheet already starts its own page; the screen's separating rule and
+     the space above it would only print as a scar at the top of one. */
+  .sheet + .sheet { margin-top: 0; }
+  .sheet + .sheet > thead > tr > th { padding-top: 14mm; border-top: none; }
   .sheet__title { color: #000; }
   .sheet-head, .sheet-foot { color: #333; }
   .provisional-band { border-color: #000; }
@@ -160,6 +167,58 @@
   .sheet-foot { border-top-color: #999; }
   /* A scrolling box clips its overflow on paper — let the tables run on. */
   .scroller, .scroller--short { max-height: none !important; overflow: visible !important; }
+
+  /**
+   * The base quarter's tag used to sit beside its heading on the same line,
+   * and `thead th` is nowrap. On screen that costs nothing, because the table
+   * scrolls. On paper it made the base quarter's table 775px wide against the
+   * 688px of usable A4 — the Bitumen column of the first quarter printed past
+   * the right margin and into the edge of the paper, where a printer cannot
+   * reach it, while the two quarters below it sat correctly. It also left the
+   * three quarters with three different sets of column positions, when they
+   * are meant to be read down as one series.
+   *
+   * Setting it on its own line inside the same cell costs one line of header
+   * height and returns the table to the width of its neighbours.
+   */
+  table.grid thead th .tag { display: block; margin-left: 0; }
+
+  /**
+   * Density. Paper has no hover, no scrolling and no need for a comfortable
+   * click target, so the row heights and gutters that make the screen legible
+   * are simply length here — and length is pages. Nothing below shrinks a
+   * figure: the type sizes are untouched, and the room comes out of the space
+   * around the numbers. This is what takes Agreement 168 from six sheets of
+   * paper to three.
+   */
+  table.grid th, table.grid td { padding: 0 8px; height: 26px; }
+  /* Named in full only to outrank the 40px the screen's own
+     `table.grid tfoot td` sets, which the rule above cannot reach. */
+  table.grid tfoot td { height: 28px; }
+  /**
+   * A cell holding an editable control gives up its padding to the control,
+   * which restates it. On paper the control is gone and the figure printed in
+   * its place inherited the nothing — the Adjustment column stood 12px right
+   * of its own heading. Screen keeps the rule; paper takes the padding back.
+   */
+  table.grid td:has(> input.cell),
+  table.grid td:has(> select.cell) { padding: 0 8px; }
+  .grid-fields { gap: var(--s2) var(--s5); }
+  .report .component { padding: var(--s3) 0; }
+  /* padding-block, not the shorthand: the operator gutters above are what
+     hold the fifteen columns apart, and a shorthand here reset them — the
+     period ran straight into the factor, "Jul–Sep 20230.75". */
+  .formula-block > * { padding-block: 4px; }
+  .bill-head { padding-bottom: var(--s3); }
+  .bill-head .meta { margin: var(--s1) 0 var(--s3); }
+  .bill-total { margin-top: var(--s4); padding-top: var(--s3); }
+  .sign { margin-top: var(--s5); }
+  .section { margin-top: var(--s4); }
+
+  /* A label above its figure is one thing, not two: split by a page break, the
+     quarter totals printed their headings on one page and their amounts on the
+     next. */
+  .quarter-cell, .bill-total, .bill-total__final { break-inside: avoid; }
 
   @page { size: A4; margin: 0; }
 }

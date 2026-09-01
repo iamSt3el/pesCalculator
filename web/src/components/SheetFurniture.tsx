@@ -7,14 +7,20 @@ import { provisionalNotice, sheetLabel, todayIso } from '../sheets.ts';
  * takes away: who this bill belongs to at the top, and which sheet of how many
  * — with the date it was prepared — at the foot.
  *
- * It wraps its content rather than sitting beside it, because the foot has to
- * fall below the body and a fragment of two siblings cannot do that.
+ * It is a table, and that is not decoration. A sheet longer than one page used
+ * to carry its head and foot on the first page only, and every page after it
+ * began at the very edge of the paper, inside the band a laser printer cannot
+ * reach — the Steel and POL blocks of Agreement 168 printed 2mm from the top
+ * edge. `thead` and `tfoot` are the one mechanism Chrome repeats on every page
+ * of a fragmented box, so the head, the foot, and the 14mm of clear paper they
+ * carry with them are now on every page of the sheet.
  *
- * Known limitation: the furniture is per-sheet, so a sheet that overflows onto
- * a second physical page carries it on the first page only. Chrome does not
- * support @page margin boxes, and a position:fixed element repeats identical
- * content on every page — which would print the wrong sheet number. If a sheet
- * starts overflowing, reduce that sheet's density; do not reach for fixed.
+ * `position: fixed` was tried and measured: Chrome repeats it, but places it
+ * against the document rather than the page, so on page two the foot printed
+ * near the top and the head near the bottom. It is not an option.
+ *
+ * Because each sheet is its own table, `Sheet n of m` stays true — the count
+ * names the section, not the page.
  */
 export function SheetFurniture({
   index, total, agreementNo, contractor, problemCount, last = false, children,
@@ -30,21 +36,35 @@ export function SheetFurniture({
   const name = agreementNo || 'Untitled contract';
   const notice = provisionalNotice(problemCount);
   return (
-    <section className={`sheet${last ? ' sheet--last' : ''}`}>
-      <div className="sheet-head">
-        <span>
-          <strong>{name}</strong>
-          {contractor && <> · {contractor}</>}
-        </span>
-        <span>Price escalation · Clause-45</span>
-      </div>
+    <table className={`sheet${last ? ' sheet--last' : ''}`}>
+      <thead>
+        <tr>
+          <th>
+            <div className="sheet-head">
+              <span>
+                <strong>{name}</strong>
+                {contractor && <> · {contractor}</>}
+              </span>
+              <span>Price escalation · Clause-45</span>
+            </div>
+          </th>
+        </tr>
+      </thead>
 
-      <div className="sheet__body">{children}</div>
+      <tfoot>
+        <tr>
+          <td>
+            <div className="sheet-foot">
+              <span>{notice ?? name}</span>
+              <span>{sheetLabel(index, total)} · prepared {formatDate(todayIso())}</span>
+            </div>
+          </td>
+        </tr>
+      </tfoot>
 
-      <div className="sheet-foot">
-        <span>{notice ?? name}</span>
-        <span>{sheetLabel(index, total)} · prepared {formatDate(todayIso())}</span>
-      </div>
-    </section>
+      <tbody>
+        <tr><td className="sheet__body">{children}</td></tr>
+      </tbody>
+    </table>
   );
 }

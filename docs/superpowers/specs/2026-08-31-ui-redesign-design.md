@@ -311,6 +311,61 @@ grouped `22,14,599.00` in the next column. `BaseRateSummary` already had the rig
 it drops its Override column in print — and `ScheduleTable` now follows it. A filed bill
 must record the figure, never the means of changing it.
 
+> **Amended 2026-09-01, after printing Agreement 168 to PDF through Chrome and reading the
+> pages.** The furniture above was rendered once per `.sheet`, and the known limitation this
+> section states — that a sheet spilling onto a second page carries head and foot on its
+> first page only — turned out to be worse than a missing header.
+>
+> The page margin was held as `padding` on the `.sheet` box. Padding applies at the top of
+> the first fragment of a box and the bottom of the last, and **nowhere in between**, so
+> every continuation page began at the paper's edge: the Steel and POL blocks of Agreement
+> 168 printed ~2mm from the top, inside the band a laser printer cannot put toner on. Three
+> quarter totals of the Base Rate sheet printed the same way, cut off from the labels that
+> named them on the page before.
+>
+> **A sheet is now a one-column table**, its running head a `thead` and its running foot a
+> `tfoot`. That is the one mechanism Chrome repeats on every page of a fragmented box, so
+> the head, the foot, and the 14mm of clear paper they carry with them repeat with them.
+> Because each sheet is still its own element, `Sheet n of m` stays true — it names the
+> section, not the page.
+>
+> `position: fixed` was tried before the table, and measured rather than assumed: Chrome
+> does repeat it, but positions it against the document instead of the page, so on page two
+> the foot printed near the top and the head near the bottom. It is not an option, and the
+> reason is now recorded rather than asserted.
+>
+> `@page { margin: 0 }` is unchanged and still deliberate. The margin is furniture, not page
+> geometry, which is why Chrome still has nowhere to draw its URL strip.
+
+**Three more defects, all found by reading the printed pages rather than the screen.**
+
+1. **The base quarter's table ran off the paper.** `thead th` is `nowrap`, and the first
+   quarter's corner cell carries the `Base quarter` tag beside its heading. On screen the
+   table scrolls, so the extra ~87px costs nothing; on paper the table measured 775px
+   against 688px of usable A4 and the Bitumen column printed past the right margin into the
+   edge of the sheet. It also left the three quarters with three different sets of column
+   positions, when they are meant to be read down as one series. In print the tag now sits
+   on its own line inside the same cell.
+2. **The Adjustment column stood 12px right of its own heading.** `td:has(> input.cell)`
+   drops the cell's padding so the control can restate it; on paper the control is gone and
+   the printed figure inherited the nothing. Print takes the padding back.
+3. **Six pages for three sheets, two of them near-blank.** Removing the `min-height` had
+   stopped the *forced* blank page, but both Base Rate and the Calculation still overran
+   their last page by a sliver, so a foot alone held page 3 and page 6. Print now tightens
+   row heights, cell gutters and block spacing — **no type size changes; the figures are
+   untouched** — and Agreement 168 comes off the printer as three pages: Index Average,
+   Base Rate, and the Calculation across two.
+
+   This does not contradict the rejection recorded above. What was rejected was shrinking
+   the figures to force one page per sheet. What is done here is removing space that only a
+   screen needs — a 36px row is a click target, and paper has no cursor — and the
+   Calculation still takes the two pages it honestly needs.
+
+**Verified on a bill built to break it.** A 24-month, two-year contract prints nine pages:
+the Schedule of payment splits mid-table, its column headings repeat on the continuation
+page while its total appears once, the running head and foot appear on all nine, and every
+page keeps its 14mm of clear paper.
+
 ### 7.3 Sheet layout
 
 - Particulars move from an auto-fit `grid-fields` to a fixed three-column block, so the
@@ -378,10 +433,15 @@ Verification is therefore manual and must actually be performed:
    **light and dark**, at desktop and phone widths. Screenshot each.
 4. Verify keyboard navigation by entering a month of days in the spanwise grid using the
    keyboard alone, without touching the mouse.
-5. Print-preview the three-sheet set for Agreement 168 and confirm: the payable is
-   ₹1,72,604 unchanged, the formula block fits within the A4 text width, no row is cut by
-   a page break, and head and foot appear on all three sheets.
-6. Print-preview a deliberately provisional bill and confirm the band and the foot notice.
+5. Print the three-sheet set for Agreement 168 and confirm: the payable is
+   ₹1,72,604 unchanged, every table fits within the A4 text width, no row is cut by
+   a page break, and head, foot and margins appear on **every page**, not only on the first
+   page of each sheet. Read the pages, not the preview — the defects this section records
+   were all invisible on screen.
+6. Print a deliberately provisional bill and confirm the band and the foot notice, the
+   notice on continuation pages included.
+7. Print a contract long enough to split a table across a page — a two-year one will do —
+   and confirm the column headings repeat while the total does not.
 
 Item 5 is the one that matters most: the calculation is verified against the original
 workbook to the paisa, and no part of this redesign may alter a figure.
