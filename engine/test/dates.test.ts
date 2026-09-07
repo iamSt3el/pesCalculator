@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   monthOfDate, addDays, daysBetween, quarterOfMonth,
-  monthsOfQuarter, roundHalfAwayFromZero,
+  monthsOfQuarter, roundHalfAwayFromZero, availableDays,
 } from '../src/dates.ts';
 
 test('monthOfDate truncates a date to its month', () => {
@@ -39,4 +39,19 @@ test('roundHalfAwayFromZero matches Excel ROUND, including negatives', () => {
   assert.equal(roundHalfAwayFromZero(-1.5), -2);   // Math.round gives -1 here
   assert.equal(roundHalfAwayFromZero(172603.9973), 172604);
   assert.equal(roundHalfAwayFromZero(-18356.293429, 2), -18356.29);
+});
+
+test('availableDays gives each month only the days it has inside the period', () => {
+  const days = availableDays('2023-09-24', '2024-02-23');
+  // Work commenced on the 24th, so September offers six days, not thirty.
+  assert.equal(days.get('2023-09'), 6);
+  assert.equal(days.get('2023-10'), 31);
+  assert.equal(days.get('2024-02'), 23);
+  // They partition the period exactly, which is what makes them a measure.
+  assert.equal([...days.values()].reduce((a, b) => a + b, 0), daysBetween('2023-09-24', '2024-02-23'));
+});
+
+test('availableDays covers a period that opens and closes in one month', () => {
+  const days = availableDays('2024-03-05', '2024-03-20');
+  assert.deepEqual([...days.entries()], [['2024-03', 15]]);
 });

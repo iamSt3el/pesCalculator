@@ -130,3 +130,25 @@ test('a schedule short for any other reason is still reported as drift', () => {
   assert.equal(r.problems.some((p) => p.code === 'schedule_drift'), true);
   assert.equal(r.problems.some((p) => p.code === 'unworked_span'), false);
 });
+
+test('more days in a month than it has inside the period is reported', () => {
+  const r = calculate({
+    ...input,
+    // February 2024 offers 23 days; the period ends on the 23rd.
+    progress: PROGRESS_168.map((p) =>
+      p.month === '2024-02' ? { month: p.month, spanDays: [0, 0, 0, 29] as [number, number, number, number] } : p),
+  });
+  const problem = r.problems.find((p) => p.code === 'impossible_days');
+  assert.ok(problem, 'a month recording more days than it has should be reported');
+  assert.deepEqual(problem.months, ['2024-02']);
+});
+
+test('golden: the recorded days fit the months they are recorded in', () => {
+  assert.equal(calculate(input).problems.some((p) => p.code === 'impossible_days'), false);
+});
+
+test('the calculation carries each month the days it has to offer', () => {
+  const r = calculate(input);
+  assert.equal(r.monthDays.get('2023-09'), 6);
+  assert.equal(r.monthDays.get('2024-02'), 23);
+});

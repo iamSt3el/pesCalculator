@@ -73,3 +73,15 @@ test('an unworked span points at Main Data, where the days are entered', () => {
   // The quarter means come from the rates chart alone and stay trustworthy.
   assert.equal(blocked.has('indexAverage'), false);
 });
+
+test('impossible days point at Main Data, where the grid is', () => {
+  const [routed] = routeProblems([
+    { code: 'impossible_days', message: 'too many days', months: ['2024-02'] },
+  ]);
+  assert.equal(routed!.stage, 'mainData');
+  assert.deepEqual(routed!.months, ['2024-02']);
+  const blocked = blockedStages([{ code: 'impossible_days' }]);
+  assert.equal(blocked.has('mainData'), true);
+  assert.equal(blocked.has('print'), true);
+  assert.equal(blocked.has('indexAverage'), false);
+});

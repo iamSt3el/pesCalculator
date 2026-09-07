@@ -64,10 +64,11 @@ export async function listContractSummaries(ownerId: number): Promise<ContractSu
 const fromMap = <V>(m: Map<string, V>): Record<string, V> => Object.fromEntries(m);
 
 export interface SerialisedResult extends Omit<
-  CalculationResult, 'bases' | 'componentTotals' | 'schedule'
+  CalculationResult, 'bases' | 'componentTotals' | 'schedule' | 'monthDays'
 > {
   bases: Record<string, unknown>;
   componentTotals: Record<string, number>;
+  monthDays: Record<string, number>;
   schedule: Omit<CalculationResult['schedule'], 'byQuarter'> & { byQuarter: Record<string, number> };
 }
 
@@ -77,6 +78,7 @@ export function serialiseResult(r: CalculationResult): SerialisedResult {
     ...r,
     bases: fromMap(r.bases),
     componentTotals: fromMap(r.componentTotals),
+    monthDays: fromMap(r.monthDays),
     schedule: { ...r.schedule, byQuarter: fromMap(r.schedule.byQuarter) },
   };
 }

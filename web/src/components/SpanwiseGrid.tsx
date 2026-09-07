@@ -60,6 +60,14 @@ export function SpanwiseGrid() {
     calculation?.schedule.rows.find((r) => r.month === month)?.computed ?? 0;
 
   const spanTotals = [0, 1, 2, 3].map((i) => rows.reduce((a, r) => a + (r.spanDays[i] ?? 0), 0));
+  // Days each month has inside the period, so a gap in the record is visible
+  // rather than silently reshaping the bill. September of a contract commencing
+  // on the 24th offers six days, not thirty.
+  const availableFor = (month: string) => calculation?.monthDays[month] ?? 0;
+  const recordedFor = (month: string) => daysFor(month).reduce((a, b) => a + b, 0);
+  const totalAvailable = months.reduce((a, m) => a + availableFor(m), 0);
+  const totalRecorded = months.reduce((a, m) => a + recordedFor(m), 0);
+  const unaccounted = totalAvailable - totalRecorded;
   // A contract nobody has started has four empty spans, which is not a mistake.
   // Only once some days exist does an empty span mean one was missed.
   const started = spanTotals.some((t) => t > 0);
@@ -128,6 +136,7 @@ export function SpanwiseGrid() {
               <th className="r col-xs">Span 2</th>
               <th className="r col-xs">Span 3</th>
               <th className="r col-xs">Span 4</th>
+              <th className="r col-xs">Days</th>
               <th className="r">Amount</th>
             </tr>
           </thead>
@@ -139,13 +148,16 @@ export function SpanwiseGrid() {
                   <td className="nowrap">{formatMonth(month)}</td>
                   {[0, 1, 2, 3].map((i) => (
                     <td key={i}>
-                      <input className="cell" type="number" min="0" max="31"
+                      <input className="cell" type="number" min="0" max={availableFor(month) || undefined}
                              data-r={r} data-c={i} onKeyDown={onKeyDown}
                              value={days[i] || ''}
                              placeholder="0"
                              onChange={(e) => setDay(month, i, Number(e.target.value))} />
                     </td>
                   ))}
+                  <td className={`num${calculation && recordedFor(month) > availableFor(month) ? ' num--negative' : ''}`}>
+                    {recordedFor(month)}/{calculation ? availableFor(month) : '—'}
+                  </td>
                   <td className="r"><MonthAmount value={amountFor(month)} /></td>
                 </tr>
               );
@@ -165,11 +177,20 @@ export function SpanwiseGrid() {
                   </td>
                 );
               })}
+              <td className="num">{totalRecorded}/{totalAvailable}</td>
               <td className="num">{calculation ? formatRupees(calculation.schedule.total) : '—'}</td>
             </tr>
           </tfoot>
         </table>
       </div>
+
+      {unaccounted > 0 && (
+        <p className="subtitle">
+          {unaccounted} day{unaccounted === 1 ? '' : 's'} of the period carry no work.
+          That is how an idle month is recorded — check it is deliberate, because
+          those days are shared out among the months that were worked.
+        </p>
+      )}
     </section>
   );
 }

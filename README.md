@@ -74,7 +74,7 @@ npm run dev:web        # UI on :5173, proxying /api to :3000
 ## Tests
 
 ```bash
-npm test               # engine 52, server 53, web 66
+npm test               # engine 57, server 53, web 67
 ```
 
 > **The server tests call `DROP SCHEMA`.** They run only against

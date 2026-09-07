@@ -1,4 +1,4 @@
-import { roundHalfAwayFromZero } from './dates.ts';
+import { availableDays, roundHalfAwayFromZero } from './dates.ts';
 import {
   baseQuarterOf, buildRateIndex, monthValue, quarterMean,
   quartersUnderConsideration, resolveBaseRates, type ResolvedBase,
@@ -25,7 +25,7 @@ export interface EscalationLine {
 
 export interface Problem {
   code: 'missing_rates' | 'percent_total' | 'zero_base' | 'invalid_period'
-    | 'schedule_drift' | 'unworked_span';
+    | 'schedule_drift' | 'unworked_span' | 'impossible_days';
   message: string;
   months?: Month[];
 }
@@ -40,6 +40,8 @@ export interface CalculationInput {
 
 export interface CalculationResult {
   spans: SpanTable;
+  /** Days each month has inside the period - what its recorded days are measured against. */
+  monthDays: Map<Month, number>;
   schedule: PaymentSchedule;
   baseQuarter: Quarter;
   bases: Map<ComponentKey, ResolvedBase>;
@@ -121,6 +123,27 @@ export function calculate(input: CalculationInput): CalculationResult {
     }
   }
 
+  // Days recorded beyond what a month holds inside the period lower the span's
+  // per-day rate and mis-bill every month in it. Nothing checked this: `max=31`
+  // on the input is a hint the browser does not enforce, and the API takes any
+  // non-negative integer.
+  const monthDays = hasPeriod
+    ? availableDays(contract.commencement, contract.actualCompletion)
+    : new Map<Month, number>();
+  if (hasPeriod) {
+    const impossible = progress
+      .filter((p) => p.spanDays.reduce((a, b) => a + b, 0) > (monthDays.get(p.month) ?? 0))
+      .map((p) => p.month)
+      .sort();
+    if (impossible.length > 0) {
+      problems.push({
+        code: 'impossible_days',
+        message: `More days are recorded than the contract period leaves in ${impossible.length} month(s): ${impossible.join(', ')}.`,
+        months: impossible,
+      });
+    }
+  }
+
   const baseQuarter = baseQuarterOf(contract.bidDate);
   const { bases, missing } = resolveBaseRates(rates, contract, components);
   const missingMonths = new Set<Month>(missing);
@@ -179,7 +202,7 @@ export function calculate(input: CalculationInput): CalculationResult {
 
   const grandTotal = [...componentTotals.values()].reduce((a, b) => a + b, 0);
   return {
-    spans, schedule, baseQuarter, bases, quarters, lines, componentTotals,
+    spans, monthDays, schedule, baseQuarter, bases, quarters, lines, componentTotals,
     grandTotal,
     alreadyPaid: contract.alreadyPaid,
     payable: roundHalfAwayFromZero(grandTotal - contract.alreadyPaid, 2),

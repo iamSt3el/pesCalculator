@@ -141,6 +141,32 @@ adjustments do not net to zero, edited on **Base Rate**. Reporting both as
 `schedule_drift` sent an operator with unrecorded days to Base Rate, where there
 is nothing to fix.
 
+**Days available per month.** `daysBetween` is a difference, so the commencement
+day is day zero and the first day worked is the one after it. The days of a
+month that lie inside the period are therefore
+
+```
+available(m) = daysBetween(max(commencement, day before m starts),
+                           min(actual_completion, last day of m))
+```
+
+which partitions the period exactly: a contract running 24-Sep-2023 to
+23-Feb-2024 offers 6, 31, 30, 31, 31, 23 — 152 days, the whole of P. Agreement
+168 records exactly those six figures.
+
+A month recording **more** days than it has is impossible, and is reported as
+`impossible_days` against Main Data. Nothing checked this before: `max=31` on the
+input is a hint the browser does not enforce, and the API accepts any
+non-negative integer. Over-recording lowers the span's per-day rate and mis-bills
+every month in it.
+
+A month recording **fewer** is not an error — that is exactly what an idle month
+is, and the engine cannot tell one day worked in July from a mistyped thirty-one.
+So the days that carry no work are shown rather than flagged: each month is
+displayed against its available days, and the grid totals what is unaccounted
+for. Making the gap visible is what keeps it deliberate, since those days are
+shared out among the months that were worked.
+
 ### 3.2 Base quarter and base indices
 
 The **base quarter** is the calendar quarter containing the bid-submission date.

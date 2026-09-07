@@ -64,6 +64,11 @@ const OWNERS: Record<string, Owner> = {
     stage: 'mainData', path: '',
     blocks: ['mainData', 'baseRate', 'calculation', 'print'],
   },
+  // Days that do not fit the month they are recorded in, fixed in the same grid.
+  impossible_days: {
+    stage: 'mainData', path: '',
+    blocks: ['mainData', 'baseRate', 'calculation', 'print'],
+  },
 };
 
 /** A code the engine grows later still has to land somewhere a reader can see it. */

@@ -121,7 +121,7 @@ export interface ResolvedBase {
 
 export interface Problem {
   code: 'missing_rates' | 'percent_total' | 'zero_base' | 'invalid_period'
-    | 'schedule_drift' | 'unworked_span';
+    | 'schedule_drift' | 'unworked_span' | 'impossible_days';
   message: string;
   months?: string[];
 }
@@ -135,6 +135,8 @@ export interface Calculation {
     values: [number, number, number, number];
     endDates: [string, string, string, string];
   };
+  /** Days each month has inside the contract period, keyed 'YYYY-MM'. */
+  monthDays: Record<string, number>;
   schedule: {
     rows: ScheduleRow[];
     total: number;
