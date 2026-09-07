@@ -59,3 +59,17 @@ test('blockedStages unions every problem present', () => {
 test('no problems blocks nothing', () => {
   assert.equal(blockedStages([]).size, 0);
 });
+
+test('an unworked span points at Main Data, where the days are entered', () => {
+  const [routed] = routeProblems([{ code: 'unworked_span', message: 'span 4 has no days' }]);
+  // The spanwise grid lives on Main Data; only the adjustments are on Base Rate.
+  assert.equal(routed!.stage, 'mainData');
+  assert.equal(routed!.path, '');
+
+  const blocked = blockedStages([{ code: 'unworked_span' }]);
+  assert.equal(blocked.has('mainData'), true);
+  assert.equal(blocked.has('baseRate'), true);
+  assert.equal(blocked.has('print'), true);
+  // The quarter means come from the rates chart alone and stay trustworthy.
+  assert.equal(blocked.has('indexAverage'), false);
+});

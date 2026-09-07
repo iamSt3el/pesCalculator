@@ -95,6 +95,6 @@ test('resolveBaseRates honours an operator override', () => {
 
 test('quartersUnderConsideration comes from the months that carry payments', () => {
   const spans = computeSpans(CONTRACT_168.commencement, CONTRACT_168.actualCompletion, CONTRACT_168.workDoneAmount);
-  const sched = buildSchedule(PROGRESS_168, spans, CONTRACT_168.workDoneAmount, new Map());
+  const sched = buildSchedule(PROGRESS_168, spans, new Map());
   assert.deepEqual(quartersUnderConsideration(sched), ['2023-Q3', '2023-Q4', '2024-Q1']);
 });

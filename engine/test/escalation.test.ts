@@ -107,3 +107,26 @@ test('a zero base index is reported instead of producing Infinity', () => {
   assert.ok(result.problems.some((p) => p.code === 'zero_base'));
   assert.equal(result.componentTotals.get('labour'), 0);
 });
+
+test('an unworked span is reported against the days, not the schedule', () => {
+  const r = calculate({
+    ...input,
+    // Span 4's days are dropped, so its value has no days to be billed over.
+    progress: PROGRESS_168.map((p) =>
+      p.month === '2024-01' ? { month: p.month, spanDays: [0, 0, 16, 0] as [number, number, number, number] }
+      : p.month === '2024-02' ? { month: p.month, spanDays: [0, 0, 0, 0] as [number, number, number, number] }
+      : p),
+  });
+  const problem = r.problems.find((p) => p.code === 'unworked_span');
+  assert.ok(problem, 'an unworked span should be reported under its own code');
+  assert.match(problem.message, /span 4/i);
+  // It is the days that are missing, so it must not masquerade as schedule drift.
+  assert.equal(r.problems.some((p) => p.code === 'schedule_drift'), false);
+});
+
+test('a schedule short for any other reason is still reported as drift', () => {
+  // Every span is worked; an adjustment that does not net to zero moves the total.
+  const r = calculate({ ...input, adjustments: new Map([['2024-02', 5000]]) });
+  assert.equal(r.problems.some((p) => p.code === 'schedule_drift'), true);
+  assert.equal(r.problems.some((p) => p.code === 'unworked_span'), false);
+});

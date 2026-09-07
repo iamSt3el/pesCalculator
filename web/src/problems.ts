@@ -57,6 +57,13 @@ const OWNERS: Record<string, Owner> = {
     stage: 'baseRate', path: 'base-rate',
     blocks: ['baseRate', 'calculation', 'print'],
   },
+  // A span with no days is the other half of drift, and it is fixed in the
+  // spanwise grid on Main Data. Index Average reads the rates chart alone, so
+  // it stays trustworthy while the days are incomplete.
+  unworked_span: {
+    stage: 'mainData', path: '',
+    blocks: ['mainData', 'baseRate', 'calculation', 'print'],
+  },
 };
 
 /** A code the engine grows later still has to land somewhere a reader can see it. */

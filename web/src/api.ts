@@ -120,7 +120,8 @@ export interface ResolvedBase {
 }
 
 export interface Problem {
-  code: 'missing_rates' | 'percent_total' | 'zero_base' | 'invalid_period' | 'schedule_drift';
+  code: 'missing_rates' | 'percent_total' | 'zero_base' | 'invalid_period'
+    | 'schedule_drift' | 'unworked_span';
   message: string;
   months?: string[];
 }
@@ -132,10 +133,15 @@ export interface Calculation {
     totalDays: number;
     days: [number, number, number, number];
     values: [number, number, number, number];
-    perDay: [number, number, number, number];
     endDates: [string, string, string, string];
   };
-  schedule: { rows: ScheduleRow[]; total: number; byQuarter: Record<string, number> };
+  schedule: {
+    rows: ScheduleRow[];
+    total: number;
+    byQuarter: Record<string, number>;
+    workedDays: [number, number, number, number];
+    perDay: [number, number, number, number];
+  };
   baseQuarter: string;
   bases: Record<string, ResolvedBase>;
   quarters: string[];

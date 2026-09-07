@@ -41,6 +41,7 @@ export function SpanwiseGrid() {
   const months = monthsBetween(contract.commencement, contract.actualCompletion);
   const { grid, onKeyDown } = useGridKeys(months.length, 4);
   const spans = calculation?.spans;
+  const schedule = calculation?.schedule;
 
   const daysFor = (month: string): [number, number, number, number] =>
     rows.find((r) => r.month === month)?.spanDays ?? [0, 0, 0, 0];
@@ -59,6 +60,9 @@ export function SpanwiseGrid() {
     calculation?.schedule.rows.find((r) => r.month === month)?.computed ?? 0;
 
   const spanTotals = [0, 1, 2, 3].map((i) => rows.reduce((a, r) => a + (r.spanDays[i] ?? 0), 0));
+  // A contract nobody has started has four empty spans, which is not a mistake.
+  // Only once some days exist does an empty span mean one was missed.
+  const started = spanTotals.some((t) => t > 0);
 
   if (months.length === 0) {
     return (
@@ -77,25 +81,39 @@ export function SpanwiseGrid() {
     <section className="section">
       <div className="section-head"><h2>Work done, month by month</h2></div>
       <p className="subtitle">
-        Enter the days worked in each span. Amounts follow from the span rates.
+        Enter the days worked in each span. A month with no work done bills nothing,
+        and the months that were worked carry its share of the span.
       </p>
 
       {spans && (
         <div className="panel panel--flush scroller--short bar">
           <table className="grid">
             <thead>
-              <tr><th>Span</th><th className="r">Days</th><th className="r">Value</th><th className="r">Per day</th><th>Ends</th></tr>
+              <tr>
+                <th>Span</th><th className="r">Days</th><th className="r">Worked</th>
+                <th className="r">Value</th><th className="r">Per day</th><th>Ends</th>
+              </tr>
             </thead>
             <tbody>
-              {[0, 1, 2, 3].map((i) => (
-                <tr key={i}>
-                  <td>Span {i + 1}</td>
-                  <td className="num">{spans.days[i]}</td>
-                  <td className="num">{formatRupees(spans.values[i]!)}</td>
-                  <td className="num">{formatRupees(spans.perDay[i]!)}</td>
-                  <td>{formatDate(spans.endDates[i]!)}</td>
-                </tr>
-              ))}
+              {[0, 1, 2, 3].map((i) => {
+                // A span nobody worked has no rate to bill its value at, and the
+                // schedule falls short by exactly that value.
+                const idle = schedule !== undefined && schedule.workedDays[i] === 0;
+                return (
+                  <tr key={i}>
+                    <td>Span {i + 1}</td>
+                    <td className="num">{spans.days[i]}</td>
+                    <td className={`num${idle && started ? ' num--negative' : ''}`}>
+                      {schedule ? schedule.workedDays[i] : '—'}
+                    </td>
+                    <td className="num">{formatRupees(spans.values[i]!)}</td>
+                    <td className="num">
+                      {schedule && !idle ? formatRupees(schedule.perDay[i]!) : '—'}
+                    </td>
+                    <td>{formatDate(spans.endDates[i]!)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -138,9 +156,11 @@ export function SpanwiseGrid() {
               <td>Days allocated</td>
               {[0, 1, 2, 3].map((i) => {
                 const target = spans?.days[i];
-                const over = target !== undefined && spanTotals[i]! > target;
+                const wrong = target !== undefined
+                  && (spanTotals[i]! > target
+                      || (started && target > 0 && spanTotals[i] === 0));
                 return (
-                  <td key={i} className={`num${over ? ' num--negative' : ''}`}>
+                  <td key={i} className={`num${wrong ? ' num--negative' : ''}`}>
                     {spanTotals[i]}{target !== undefined ? ` / ${target}` : ''}
                   </td>
                 );

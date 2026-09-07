@@ -5,7 +5,6 @@ export interface SpanTable {
   totalDays: number;
   days: [number, number, number, number];
   values: [number, number, number, number];
-  perDay: [number, number, number, number];
   endDates: [IsoDate, IsoDate, IsoDate, IsoDate];
 }
 
@@ -18,7 +17,6 @@ export function emptySpanTable(): SpanTable {
     totalDays: 0,
     days: [0, 0, 0, 0],
     values: [0, 0, 0, 0],
-    perDay: [0, 0, 0, 0],
     endDates: ['', '', '', ''],
   };
 }
@@ -52,26 +50,49 @@ export function computeSpans(
     cumulative[3] - cumulative[2],
   ];
 
-  const perDay: [number, number, number, number] = [
-    days[0] === 0 ? 0 : values[0] / days[0],
-    days[1] === 0 ? 0 : values[1] / days[1],
-    days[2] === 0 ? 0 : values[2] / days[2],
-    days[3] === 0 ? 0 : values[3] / days[3],
-  ];
-
   let cursor = commencement;
   const endDates = days.map((d) => (cursor = addDays(cursor, d))) as
     [IsoDate, IsoDate, IsoDate, IsoDate];
 
-  return { totalDays: P, days, values, perDay, endDates };
+  return { totalDays: P, days, values, endDates };
+}
+
+/** Days recorded against each span, added up across every month. */
+export function workedDays(progress: ProgressRow[]): [number, number, number, number] {
+  const out: [number, number, number, number] = [0, 0, 0, 0];
+  for (const row of progress) {
+    for (let i = 0; i < 4; i++) out[i]! += row.spanDays[i] ?? 0;
+  }
+  return out;
+}
+
+/**
+ * The rate each span is actually billed at: its value over the days worked in
+ * it, not the days it spans. A month in which no work was done contributes no
+ * days, so it bills nothing and the months that were worked carry its share -
+ * which keeps the schedule on the work done amount. Dividing by the calendar
+ * days instead left that share unbilled, and the shortfall was reported as a
+ * drift the operator could not clear.
+ *
+ * A span with no worked days at all has nowhere to put its value. The rate is
+ * zero and the schedule falls short, which `calculate` reports as drift.
+ */
+export function effectivePerDay(
+  spans: SpanTable, progress: ProgressRow[],
+): [number, number, number, number] {
+  const worked = workedDays(progress);
+  return [0, 1, 2, 3].map((i) =>
+    worked[i] === 0 ? 0 : spans.values[i]! / worked[i]!,
+  ) as [number, number, number, number];
 }
 
 /** Exact, unrounded amount earned in each month across all four spans. */
 export function monthlyExact(progress: ProgressRow[], spans: SpanTable): Map<Month, number> {
   const out = new Map<Month, number>();
+  const perDay = effectivePerDay(spans, progress);
   for (const row of progress) {
     let amount = 0;
-    for (let i = 0; i < 4; i++) amount += (row.spanDays[i] ?? 0) * (spans.perDay[i] ?? 0);
+    for (let i = 0; i < 4; i++) amount += (row.spanDays[i] ?? 0) * (perDay[i] ?? 0);
     out.set(row.month, (out.get(row.month) ?? 0) + amount);
   }
   return out;
@@ -80,13 +101,21 @@ export function monthlyExact(progress: ProgressRow[], spans: SpanTable): Map<Mon
 /**
  * Largest-remainder allocation. Rounding each month independently loses money:
  * the source contract's six months round to one rupee under the work done amount.
- * Floor everything, then hand the shortfall to the largest discarded fractions.
+ * Floor everything, then hand the rounding remainder to the largest discarded
+ * fractions.
+ *
+ * The target is what the months actually earned, rounded - not the work done
+ * amount. Aiming at the work done amount meant that a span with no worked days,
+ * whose value has nowhere to go, was met by handing a spare rupee to every month
+ * in the schedule. That invented money to close a gap that is real, and the gap
+ * belongs in the drift `calculate` reports.
  */
-export function allocateRupees(exact: Map<Month, number>, total: number): Map<Month, number> {
+export function allocateRupees(exact: Map<Month, number>): Map<Month, number> {
   const entries = [...exact.entries()];
   const floors = entries.map(([m, v]) => ({ month: m, floor: Math.floor(v), frac: v - Math.floor(v) }));
   const allocated = floors.reduce((a, f) => a + f.floor, 0);
-  let shortfall = Math.round(total - allocated);
+  const earned = entries.reduce((a, [, v]) => a + v, 0);
+  let shortfall = Math.round(roundHalfAwayFromZero(earned) - allocated);
 
   const byFraction = [...floors].sort((a, b) => b.frac - a.frac || a.month.localeCompare(b.month));
   const bump = new Map<Month, number>();
@@ -110,6 +139,9 @@ export interface PaymentSchedule {
   rows: ScheduleRow[];
   total: number;
   byQuarter: Map<Quarter, number>;
+  /** Days worked in each span, and the rate each was billed at. */
+  workedDays: [number, number, number, number];
+  perDay: [number, number, number, number];
 }
 
 /**
@@ -119,12 +151,11 @@ export interface PaymentSchedule {
 export function buildSchedule(
   progress: ProgressRow[],
   spans: SpanTable,
-  workDoneAmount: number,
   adjustments: Map<Month, number>,
 ): PaymentSchedule {
   const exact = monthlyExact(progress, spans);
   for (const [m, v] of exact) if (v === 0) exact.delete(m);
-  const allocated = allocateRupees(exact, workDoneAmount);
+  const allocated = allocateRupees(exact);
 
   const months = new Set<Month>([...allocated.keys(), ...adjustments.keys()]);
   const rows: ScheduleRow[] = [...months].sort().map((month) => {
@@ -140,5 +171,9 @@ export function buildSchedule(
   }
 
   const total = roundHalfAwayFromZero(rows.reduce((a, r) => a + r.payment, 0), 2);
-  return { rows, total, byQuarter };
+  return {
+    rows, total, byQuarter,
+    workedDays: workedDays(progress),
+    perDay: effectivePerDay(spans, progress),
+  };
 }

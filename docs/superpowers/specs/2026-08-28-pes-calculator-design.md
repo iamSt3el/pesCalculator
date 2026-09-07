@@ -98,19 +98,48 @@ d  = [b1, b2−b1, b3−b2, b4−b3]                            (38, 38, 38, 38)
 t  = [commencement+d1, t1+d2, t2+d3, t3+d4]               (span end dates)
 v  = [W/8, 3W/8, 3W/4, W]                                 (cumulative value)
 s  = [v1, v2−v1, v3−v2, v4−v3]  =  [W/8, W/4, 3W/8, W/4]  (span value)
-r  = [s1/d1, s2/d2, s3/d3, s4/d4]                         (per-day rate)
 ```
 
 `round` is half-away-from-zero to zero decimals, matching Excel's `ROUND`.
 
-For each month the operator enters days worked in each of the four spans. Then:
+For each month the operator enters days worked in each of the four spans. The
+per-day rate divides a span's value by the days actually **worked** in it — not
+by `d`, the days it spans:
 
 ```
+w  = [Σ_m days[m][1], Σ_m days[m][2], Σ_m days[m][3], Σ_m days[m][4]]
+r  = [s1/w1, s2/w2, s3/w3, s4/w4]                         (per-day rate)
+
 monthly_amount(m)   = Σ_i  days[m][i] × r[i]
 quarterly_amount(q) = Σ  monthly_amount(m)  for m in calendar quarter q
 ```
 
 Calendar quarters are Jan–Mar, Apr–Jun, Jul–Sep, Oct–Dec.
+
+**A month in which no work was done bills nothing.** It contributes no days, so
+its amount is zero and it does not appear in the schedule at all. Its share of
+the span is carried by the months of that same span that *were* worked, which
+keeps the schedule on the Work Done Amount and leaves the 1/8, 1/4, 3/8, 1/4
+S-curve intact.
+
+Dividing by `d` instead — as this spec required until the rule above replaced
+it, and as the source workbook did — left that share unbilled. A six-month
+contract with one idle month totalled short by the whole of the idle month's
+value, and the shortfall surfaced as a `schedule_drift` the operator could not
+clear by any edit except hand-shuffling days into months that had not been
+worked. When every span is worked in full, `w = d` and the two rules agree, so
+Agreement 168 is unaffected.
+
+A span with **no** worked days at all is a different matter: its value has
+nowhere to go, its rate is zero, and the schedule genuinely falls short. That is
+a gap in the days recorded, and it is reported as `unworked_span`.
+
+A short schedule therefore has two causes, and they are fixed on different
+stages: `unworked_span` for days that were never recorded, entered in the
+spanwise grid on **Main Data**; and `schedule_drift` for a schedule whose
+adjustments do not net to zero, edited on **Base Rate**. Reporting both as
+`schedule_drift` sent an operator with unrecorded days to Base Rate, where there
+is nothing to fix.
 
 ### 3.2 Base quarter and base indices
 
@@ -187,7 +216,13 @@ The schedule lists every month whose computed amount is non-zero, plus any month
 operator has given an adjustment. In the source contract that is Sep-2023 through
 Feb-2024 — the six months carrying work.
 
-**Rounding must preserve the total.** Rounding each month independently loses money:
+**Rounding must preserve what was earned.** The largest-remainder pass targets the
+sum of the exact monthly amounts, rounded — not the Work Done Amount. Aiming at
+the Work Done Amount meant that an unworked span, whose value has nowhere to go,
+was met by handing a spare rupee to every month in the schedule: invented money
+covering a gap that is real and belongs in the reported drift.
+
+Rounding each month independently loses money:
 the six exact monthly amounts round to 21,717,358, one rupee short of the Work Done
 Amount. This is precisely why the source workbook contains a hand-typed `5572218`
 where the calculation yields 5,572,217.11 — a manual patch for a rounding shortfall.
@@ -223,7 +258,7 @@ Clause-45 exists in exactly one place and is unit-tested in isolation.
 |---|---|---|
 | `types.ts` | domain types, component keys, base-rule enum | — |
 | `dates.ts` | month keys, calendar-quarter grouping, Excel-serial import | — |
-| `spans.ts` | §3.1 — period → spans → per-day rates → monthly/quarterly amounts | dates |
+| `spans.ts` | §3.1 — period → spans → worked-day rates → monthly/quarterly amounts | dates |
 | `indices.ts` | §3.2/§3.3 — rate lookup, quarter means, base-rate resolution | dates |
 | `escalation.ts` | §3.4 — per-component amounts, grand total, payable | all above |
 

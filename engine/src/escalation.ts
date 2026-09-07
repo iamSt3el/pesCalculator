@@ -24,7 +24,8 @@ export interface EscalationLine {
 }
 
 export interface Problem {
-  code: 'missing_rates' | 'percent_total' | 'zero_base' | 'invalid_period' | 'schedule_drift';
+  code: 'missing_rates' | 'percent_total' | 'zero_base' | 'invalid_period'
+    | 'schedule_drift' | 'unworked_span';
   message: string;
   months?: Month[];
 }
@@ -92,16 +93,32 @@ export function calculate(input: CalculationInput): CalculationResult {
   const spans = hasPeriod
     ? computeSpans(contract.commencement, contract.actualCompletion, contract.workDoneAmount)
     : emptySpanTable();
-  const schedule = buildSchedule(progress, spans, contract.workDoneAmount, adjustments);
+  const schedule = buildSchedule(progress, spans, adjustments);
+  // A span with no days recorded has nowhere to bill its value, and its share of
+  // the work done amount goes unbilled.
+  const unworked = [0, 1, 2, 3].filter((i) => spans.days[i]! > 0 && schedule.workedDays[i] === 0);
   // The monthly figures are allocated in whole rupees (spec 3.5), so the schedule
   // can only ever reach the work done amount rounded. Comparing against the
   // unrounded figure reported a drift that no edit could clear, which left every
   // contract whose amount carried paise permanently provisional.
   if (schedule.total !== roundHalfAwayFromZero(contract.workDoneAmount)) {
-    problems.push({
-      code: 'schedule_drift',
-      message: `Schedule totals ${schedule.total.toFixed(2)}, but the work done amount is ${contract.workDoneAmount.toFixed(2)}.`,
-    });
+    // The two causes are fixed on different stages: the days are entered on Main
+    // Data, while the schedule's adjustments are edited on Base Rate. Reporting
+    // both alike sent an operator with unrecorded days to Base Rate, where there
+    // is nothing to fix.
+    if (unworked.length > 0) {
+      const named = unworked.map((i) => `span ${i + 1}`).join(', ');
+      const stranded = unworked.reduce((a, i) => a + spans.values[i]!, 0);
+      problems.push({
+        code: 'unworked_span',
+        message: `No days are recorded against ${named}, so ${stranded.toFixed(2)} of the work done amount has no days to be billed over.`,
+      });
+    } else {
+      problems.push({
+        code: 'schedule_drift',
+        message: `Schedule totals ${schedule.total.toFixed(2)}, but the work done amount is ${contract.workDoneAmount.toFixed(2)}.`,
+      });
+    }
   }
 
   const baseQuarter = baseQuarterOf(contract.bidDate);
