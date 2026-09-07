@@ -152,3 +152,36 @@ test('the calculation carries each month the days it has to offer', () => {
   assert.equal(r.monthDays.get('2023-09'), 6);
   assert.equal(r.monthDays.get('2024-02'), 23);
 });
+
+// A contract worked only in its final month, so three months of the period and
+// one whole quarter carry nothing.
+const SLOW = {
+  ...input,
+  contract: { ...CONTRACT_168, commencement: '2023-12-01', actualCompletion: '2024-02-23' },
+  progress: [{ month: '2024-02', spanDays: [0, 0, 0, 23] as [number, number, number, number] }],
+  // Agreement 168's adjustments would put money into the very months this
+  // fixture exists to leave empty.
+  adjustments: new Map<string, number>(),
+};
+
+test('a quarter with no work is shown at zero rather than left out', () => {
+  const labour = calculate(SLOW).lines.filter((l) => l.component === 'labour');
+  assert.deepEqual(labour.map((l) => l.period), ['2023-Q4', '2024-Q1']);
+  const idle = labour.find((l) => l.period === '2023-Q4')!;
+  assert.equal(idle.value, 0);
+  assert.equal(idle.amount, 0);
+});
+
+test('bitumen lists every month of the period, the idle ones at zero', () => {
+  const bitumen = calculate(SLOW).lines.filter((l) => l.component === 'bitumen');
+  assert.deepEqual(bitumen.map((l) => l.period),
+    ['2023-12', '2024-01', '2024-02']);
+  assert.equal(bitumen.find((l) => l.period === '2023-12')!.amount, 0);
+});
+
+test('rates absent from a period that carries no value are not reported missing', () => {
+  // Dec 2023 and Jan 2024 bill nothing, so their indices cannot change the bill.
+  const r = calculate({ ...SLOW, rates: RATES_2023_24.filter((x) => x.month !== '2023-12') });
+  const missing = r.problems.find((p) => p.code === 'missing_rates');
+  assert.equal(missing?.months?.includes('2023-12') ?? false, false);
+});

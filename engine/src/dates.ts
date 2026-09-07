@@ -58,6 +58,17 @@ function nextMonth(m: Month): Month {
   return n === 12 ? `${y + 1}-01` : `${y}-${String(n + 1).padStart(2, '0')}`;
 }
 
+/** Every month the period touches, in order. */
+export function monthsOfPeriod(
+  commencement: IsoDate, actualCompletion: IsoDate,
+): Month[] {
+  if (!commencement || !actualCompletion || actualCompletion < commencement) return [];
+  const out: Month[] = [];
+  const last = monthOfDate(actualCompletion);
+  for (let m = monthOfDate(commencement); m <= last; m = nextMonth(m)) out.push(m);
+  return out;
+}
+
 /**
  * The days of each month that fall inside the period, in order.
  *
@@ -70,10 +81,7 @@ export function availableDays(
   commencement: IsoDate, actualCompletion: IsoDate,
 ): Map<Month, number> {
   const out = new Map<Month, number>();
-  if (!commencement || !actualCompletion || actualCompletion < commencement) return out;
-
-  const last = monthOfDate(actualCompletion);
-  for (let m = monthOfDate(commencement); m <= last; m = nextMonth(m)) {
+  for (const m of monthsOfPeriod(commencement, actualCompletion)) {
     const dayBeforeFirst = addDays(`${m}-01`, -1);
     const lastOfMonth = addDays(`${nextMonth(m)}-01`, -1);
     const lo = commencement > dayBeforeFirst ? commencement : dayBeforeFirst;

@@ -23,7 +23,7 @@ function monthsBetween(from: string, to: string): string[] {
 
 function MonthAmount({ value }: { value: number }) {
   const settle = useSettle(value);
-  return <span className={`num ${settle}`}>{value ? formatRupees(value) : '—'}</span>;
+  return <span className={`num ${settle}`}>{formatRupees(value)}</span>;
 }
 
 export function SpanwiseGrid() {

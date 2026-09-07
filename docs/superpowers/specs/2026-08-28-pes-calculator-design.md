@@ -196,12 +196,33 @@ index is still the quarter mean, exactly as `'Index Average'!F15/F19/F23` feed
 
 ### 3.3 Quarters under consideration
 
-Derived from the payment schedule: every calendar quarter that carries a payment.
-For the source contract these are Jul–Sep 2023, Oct–Dec 2023, Jan–Mar 2024.
+Every calendar quarter the work period touches, together with any quarter the
+payment schedule pays in. For the source contract these are Jul–Sep 2023,
+Oct–Dec 2023, Jan–Mar 2024 — it works every quarter it spans, so the two readings
+agree there.
 
-The first quarter under consideration coincides with the base quarter, so for the
-five index components its `current − base` difference is zero by construction, and
-Labour Q1 correctly yields 0. This is a property of the data, not a special case.
+**A quarter with no work still belongs on the bill**, carrying a value of zero.
+The period is what the bill is for, and leaving the quarter out made the bill
+silent about a period it covers. Bitumen, billed monthly, follows the same rule:
+every month of the period gets a line, an idle one at zero. Listing only the
+months that pay left the two halves of one bill disagreeing about the periods
+under consideration.
+
+The union with the schedule's own quarters matters because a month holding only
+an operator adjustment can fall outside the period, and taking the period alone
+would drop its escalation.
+
+A period carrying no value contributes nothing whatever its index, so a gap in
+the rates chart there is **not** reported as `missing_rates`: the index is shown
+where it exists and left as `—` where it does not, and the amount is zero either
+way. Reporting it would turn a clean bill provisional over a figure that cannot
+change the answer.
+
+In the source contract the first quarter under consideration happens to coincide
+with the base quarter, so for the five index components its `current − base`
+difference is zero by construction and Labour Q1 correctly yields 0. That is a
+property of Agreement 168's dates, not a rule: a contract bid in one quarter and
+commenced in the next has a base quarter that appears nowhere in its list.
 
 The current index for a quarter is the mean of that quarter's three months from the
 Rates Chart, regardless of which months carry payments.

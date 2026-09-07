@@ -1,4 +1,4 @@
-import { availableDays, roundHalfAwayFromZero } from './dates.ts';
+import { availableDays, monthsOfPeriod, roundHalfAwayFromZero } from './dates.ts';
 import {
   baseQuarterOf, buildRateIndex, monthValue, quarterMean,
   quartersUnderConsideration, resolveBaseRates, type ResolvedBase,
@@ -60,7 +60,10 @@ function lineAmount(
   current: number | null, base: number | null,
 ): number {
   if (current === null || base === null || base === 0) return 0;
-  return (factor * (percent / 100) * value * (current - base)) / base;
+  const amount = (factor * (percent / 100) * value * (current - base)) / base;
+  // A period carrying no value against a falling index yields -0, which prints
+  // as a signed zero and compares unequal to 0. A zero amount has no sign.
+  return amount === 0 ? 0 : amount;
 }
 
 export function calculate(input: CalculationInput): CalculationResult {
@@ -148,7 +151,9 @@ export function calculate(input: CalculationInput): CalculationResult {
   const { bases, missing } = resolveBaseRates(rates, contract, components);
   const missingMonths = new Set<Month>(missing);
 
-  const quarters = quartersUnderConsideration(schedule);
+  const quarters = quartersUnderConsideration(
+    schedule, contract.commencement, contract.actualCompletion);
+  const periodMonths = monthsOfPeriod(contract.commencement, contract.actualCompletion);
   const lines: EscalationLine[] = [];
   const componentTotals = new Map<ComponentKey, number>();
 
@@ -163,22 +168,30 @@ export function calculate(input: CalculationInput): CalculationResult {
 
     let total = 0;
     if (c.key === 'bitumen') {
-      for (const row of schedule.rows) {
-        const current = monthValue(rates, row.month, c.key);
-        if (current === null) missingMonths.add(row.month);
-        const amount = lineAmount(c.factor, c.percent, row.payment, current, base.value);
+      // Bitumen is billed monthly, so every month of the period gets a line of
+      // its own, an idle one at zero. Listing only the months that pay left the
+      // bill disagreeing with its own quarterly half about the period covered.
+      const paid = new Map(schedule.rows.map((r) => [r.month, r.payment]));
+      const months = [...new Set([...periodMonths, ...paid.keys()])].sort();
+      for (const month of months) {
+        const value = paid.get(month) ?? 0;
+        const current = monthValue(rates, month, c.key);
+        // A period carrying nothing contributes nothing whatever its index, so a
+        // gap in the chart there cannot change the bill and is not reported.
+        if (current === null && value !== 0) missingMonths.add(month);
+        const amount = lineAmount(c.factor, c.percent, value, current, base.value);
         total += amount;
         lines.push({
-          component: c.key, period: row.month, periodKind: 'month',
-          factor: c.factor, percent: c.percent, value: row.payment,
+          component: c.key, period: month, periodKind: 'month',
+          factor: c.factor, percent: c.percent, value,
           currentIndex: current, baseIndex: base.value, amount,
         });
       }
     } else {
       for (const q of quarters) {
         const mean = quarterMean(rates, q, c.key);
-        for (const m of mean.missing) missingMonths.add(m);
         const value = schedule.byQuarter.get(q) ?? 0;
+        if (value !== 0) for (const m of mean.missing) missingMonths.add(m);
         const amount = lineAmount(c.factor, c.percent, value, mean.value, base.value);
         total += amount;
         lines.push({

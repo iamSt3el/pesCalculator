@@ -93,8 +93,28 @@ test('resolveBaseRates honours an operator override', () => {
   assert.equal(bases.get('labour')!.overridden, false);
 });
 
-test('quartersUnderConsideration comes from the months that carry payments', () => {
+test('quartersUnderConsideration covers the period, not just the quarters that pay', () => {
   const spans = computeSpans(CONTRACT_168.commencement, CONTRACT_168.actualCompletion, CONTRACT_168.workDoneAmount);
   const sched = buildSchedule(PROGRESS_168, spans, new Map());
-  assert.deepEqual(quartersUnderConsideration(sched), ['2023-Q3', '2023-Q4', '2024-Q1']);
+  const { commencement, actualCompletion } = CONTRACT_168;
+  // Agreement 168 works every quarter it spans, so the two readings agree.
+  assert.deepEqual(quartersUnderConsideration(sched, commencement, actualCompletion),
+    ['2023-Q3', '2023-Q4', '2024-Q1']);
+});
+
+test('a quarter of the period that carries no payment is still under consideration', () => {
+  // Work only in the last month, as a contract that started slowly would be.
+  const spans = computeSpans('2025-07-17', '2025-11-16', 1_000_000);
+  const sched = buildSchedule([{ month: '2025-11', spanDays: [0, 0, 0, 16] }], spans, new Map());
+  assert.deepEqual(quartersUnderConsideration(sched, '2025-07-17', '2025-11-16'),
+    ['2025-Q3', '2025-Q4']);
+});
+
+test('a quarter paid outside the period is not dropped', () => {
+  // A month carrying only an operator adjustment can fall past completion.
+  const spans = computeSpans('2025-07-17', '2025-09-30', 1_000_000);
+  const sched = buildSchedule([{ month: '2025-08', spanDays: [10, 10, 10, 10] }], spans,
+    new Map([['2025-12', 5000]]));
+  assert.deepEqual(quartersUnderConsideration(sched, '2025-07-17', '2025-09-30'),
+    ['2025-Q3', '2025-Q4']);
 });

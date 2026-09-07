@@ -1,4 +1,6 @@
-import { addDays, dayOfMonth, monthOfDate, monthsOfQuarter, quarterOfMonth } from './dates.ts';
+import {
+  addDays, dayOfMonth, monthOfDate, monthsOfPeriod, monthsOfQuarter, quarterOfMonth,
+} from './dates.ts';
 import type { PaymentSchedule } from './spans.ts';
 import type {
   BaseRule, ComponentConfig, ComponentKey, ContractInput,
@@ -136,7 +138,20 @@ export function resolveBaseRates(
   return { bases, missing: [...missing].sort() };
 }
 
-/** Spec 3.3 - every calendar quarter that carries a payment, in order. */
-export function quartersUnderConsideration(schedule: PaymentSchedule): Quarter[] {
-  return [...schedule.byQuarter.keys()].sort();
+/**
+ * Spec 3.3 - every calendar quarter the work period touches, in order, together
+ * with any quarter the schedule pays in.
+ *
+ * The period is what the bill is for, so a quarter in which no work was done
+ * still belongs on it, carrying a value of zero: leaving it out made the bill
+ * silent about a period it covers. The union matters because a month holding
+ * only an operator adjustment can fall outside the period, and taking the period
+ * alone would drop its escalation.
+ */
+export function quartersUnderConsideration(
+  schedule: PaymentSchedule, commencement: IsoDate, actualCompletion: IsoDate,
+): Quarter[] {
+  const quarters = new Set<Quarter>(schedule.byQuarter.keys());
+  for (const m of monthsOfPeriod(commencement, actualCompletion)) quarters.add(quarterOfMonth(m));
+  return [...quarters].sort();
 }
