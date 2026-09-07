@@ -41,7 +41,6 @@ export function SpanwiseGrid() {
   const months = monthsBetween(contract.commencement, contract.actualCompletion);
   const { grid, onKeyDown } = useGridKeys(months.length, 4);
   const spans = calculation?.spans;
-  const schedule = calculation?.schedule;
 
   const daysFor = (month: string): [number, number, number, number] =>
     rows.find((r) => r.month === month)?.spanDays ?? [0, 0, 0, 0];
@@ -89,8 +88,9 @@ export function SpanwiseGrid() {
     <section className="section">
       <div className="section-head"><h2>Work done, month by month</h2></div>
       <p className="subtitle">
-        Enter the days worked in each span. A month with no work done bills nothing,
-        and the months that were worked carry its share of the span.
+        Enter the days worked in each span. Per day is the span's value spread over
+        all of its days. A month with no work done bills nothing, and the months
+        that were worked carry its share of the span.
       </p>
 
       {spans && (
@@ -98,25 +98,25 @@ export function SpanwiseGrid() {
           <table className="grid">
             <thead>
               <tr>
-                <th>Span</th><th className="r">Days</th><th className="r">Worked</th>
+                <th>Span</th><th className="r">Days</th>
                 <th className="r">Value</th><th className="r">Per day</th><th>Ends</th>
               </tr>
             </thead>
             <tbody>
               {[0, 1, 2, 3].map((i) => {
-                // A span nobody worked has no rate to bill its value at, and the
-                // schedule falls short by exactly that value.
-                const idle = schedule !== undefined && schedule.workedDays[i] === 0;
+                // The span's value spread over all of its days. This is what the
+                // span is worth per day if every day of it is worked; the rate a
+                // month is actually billed at rises above it when days in the
+                // span carry no work, because their share passes to the months
+                // that do. The month grid below shows what each month bills.
+                const days = spans.days[i]!;
                 return (
                   <tr key={i}>
                     <td>Span {i + 1}</td>
-                    <td className="num">{spans.days[i]}</td>
-                    <td className={`num${idle && started ? ' num--negative' : ''}`}>
-                      {schedule ? schedule.workedDays[i] : '—'}
-                    </td>
+                    <td className="num">{days}</td>
                     <td className="num">{formatRupees(spans.values[i]!)}</td>
                     <td className="num">
-                      {schedule && !idle ? formatRupees(schedule.perDay[i]!) : '—'}
+                      {days === 0 ? '—' : formatRupees(spans.values[i]! / days)}
                     </td>
                     <td>{formatDate(spans.endDates[i]!)}</td>
                   </tr>
