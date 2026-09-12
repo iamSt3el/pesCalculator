@@ -563,7 +563,14 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
 .bill-total__final > span:first-child { font-weight: 600; font-size: var(--t-h2); }
 .payable {
   font-family: var(--serif); font-variant-numeric: tabular-nums;
-  font-size: 32px; font-weight: 600; color: var(--ink); letter-spacing: -0.02em;
+  font-size: var(--t-h1); font-weight: 600; color: var(--ink); letter-spacing: -0.02em;
+}
+/* The same amount to the nearest rupee, set close under the exact figure and
+   smaller than it: one total read two ways, not two totals. */
+.bill-round {
+  margin: 2px 0 0; text-align: right;
+  font-family: var(--serif); font-variant-numeric: tabular-nums;
+  font-size: var(--t-h2); font-weight: 600; color: var(--ink);
 }
 .bill-words { margin: var(--s1) 0 0; text-align: right; font-style: italic; font-size: var(--t-body); }
 

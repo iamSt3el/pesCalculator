@@ -111,6 +111,7 @@ export function BillPaper({ showBand = true }: { showBand?: boolean } = {}) {
           </span>
           <span className="payable">₹{formatRupees(calculation.payable)}</span>
         </div>
+        <p className="bill-round">Say ₹{formatRupees(calculation.payable, 0)}</p>
         <p className="bill-words">{rupeesInWords(calculation.payable)}</p>
       </section>
 
