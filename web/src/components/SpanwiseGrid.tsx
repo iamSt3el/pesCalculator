@@ -135,7 +135,6 @@ export function SpanwiseGrid() {
               <th className="r col-xs">Span 2</th>
               <th className="r col-xs">Span 3</th>
               <th className="r col-xs">Span 4</th>
-              <th className="r col-xs">Days</th>
               <th className="r">Amount</th>
             </tr>
           </thead>
@@ -154,9 +153,6 @@ export function SpanwiseGrid() {
                              onChange={(e) => setDay(month, i, Number(e.target.value))} />
                     </td>
                   ))}
-                  <td className={`num${calculation && recordedFor(month) > availableFor(month) ? ' num--negative' : ''}`}>
-                    {recordedFor(month)}/{calculation ? availableFor(month) : '—'}
-                  </td>
                   <td className="r"><MonthAmount value={amountFor(month)} /></td>
                 </tr>
               );
@@ -176,7 +172,6 @@ export function SpanwiseGrid() {
                   </td>
                 );
               })}
-              <td className="num">{totalRecorded}/{totalAvailable}</td>
               <td className="num">{calculation ? formatRupees(calculation.schedule.total) : '—'}</td>
             </tr>
           </tfoot>
