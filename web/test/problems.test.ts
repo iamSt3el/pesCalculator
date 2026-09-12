@@ -60,13 +60,13 @@ test('no problems blocks nothing', () => {
   assert.equal(blockedStages([]).size, 0);
 });
 
-test('an unworked span points at Main Data, where the days are entered', () => {
-  const [routed] = routeProblems([{ code: 'unworked_span', message: 'span 4 has no days' }]);
+test('days that do not fill their span point at Main Data, where they are entered', () => {
+  const [routed] = routeProblems([{ code: 'unbilled_days', message: 'span 4 is short of days' }]);
   // The spanwise grid lives on Main Data; only the adjustments are on Base Rate.
   assert.equal(routed!.stage, 'mainData');
   assert.equal(routed!.path, '');
 
-  const blocked = blockedStages([{ code: 'unworked_span' }]);
+  const blocked = blockedStages([{ code: 'unbilled_days' }]);
   assert.equal(blocked.has('mainData'), true);
   assert.equal(blocked.has('baseRate'), true);
   assert.equal(blocked.has('print'), true);

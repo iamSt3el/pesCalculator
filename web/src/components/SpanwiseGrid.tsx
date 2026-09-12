@@ -59,9 +59,9 @@ export function SpanwiseGrid() {
     calculation?.schedule.rows.find((r) => r.month === month)?.computed ?? 0;
 
   const spanTotals = [0, 1, 2, 3].map((i) => rows.reduce((a, r) => a + (r.spanDays[i] ?? 0), 0));
-  // Days each month has inside the period, so a gap in the record is visible
-  // rather than silently reshaping the bill. September of a contract commencing
-  // on the 24th offers six days, not thirty.
+  // Days each month has inside the period: the ceiling on what can be recorded
+  // in it, and what the unaccounted days below are counted against. September of
+  // a contract commencing on the 24th offers six days, not thirty.
   const availableFor = (month: string) => calculation?.monthDays[month] ?? 0;
   const recordedFor = (month: string) => daysFor(month).reduce((a, b) => a + b, 0);
   const totalAvailable = months.reduce((a, m) => a + availableFor(m), 0);
@@ -89,8 +89,8 @@ export function SpanwiseGrid() {
       <div className="section-head"><h2>Work done, month by month</h2></div>
       <p className="subtitle">
         Enter the days worked in each span. Per day is the span's value spread over
-        all of its days. A month with no work done bills nothing, and the months
-        that were worked carry its share of the span.
+        all of its days, and a month bills that rate for the days it worked — so a
+        month is worth its own days and nothing else. Days nobody worked bill nothing.
       </p>
 
       {spans && (
@@ -105,11 +105,9 @@ export function SpanwiseGrid() {
             </thead>
             <tbody>
               {[0, 1, 2, 3].map((i) => {
-                // The span's value spread over all of its days. This is what the
-                // span is worth per day if every day of it is worked; the rate a
-                // month is actually billed at rises above it when days in the
-                // span carry no work, because their share passes to the months
-                // that do. The month grid below shows what each month bills.
+                // The span's value spread over all of its days, which is the
+                // rate every day recorded against the span bills at. The month
+                // grid below multiplies it by the days each month worked.
                 const days = spans.days[i]!;
                 return (
                   <tr key={i}>
@@ -189,7 +187,8 @@ export function SpanwiseGrid() {
         <p className="subtitle">
           {unaccounted} day{unaccounted === 1 ? '' : 's'} of the period carry no work.
           That is how an idle month is recorded — check it is deliberate, because
-          those days are shared out among the months that were worked.
+          those days are never billed and the schedule falls short of the work
+          done amount by what they are worth.
         </p>
       )}
     </section>

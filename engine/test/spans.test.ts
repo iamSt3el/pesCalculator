@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  allocateRupees, buildSchedule, computeSpans, effectivePerDay, monthlyExact, workedDays,
+  allocateRupees, buildSchedule, computeSpans, monthlyExact, spanPerDay, workedDays,
 } from '../src/spans.ts';
 import type { ProgressRow } from '../src/types.ts';
 
@@ -32,7 +32,7 @@ test('computeSpans dates each span end from the commencement date', () => {
 });
 
 test('a fully allocated period bills at value over the days of the span', () => {
-  const rates = effectivePerDay(spans, progress);
+  const rates = spanPerDay(spans);
   assert.equal(rates[0], W / 8 / 38);
   assert.ok(Math.abs(rates[2]! - 214316.0427631579) < 1e-6);
 });
@@ -103,20 +103,37 @@ test('workedDays totals the days recorded against each span', () => {
   assert.deepEqual(workedDays(julyIdle), [46, 45, 15, 45]);
 });
 
-test('effectivePerDay divides a span value by the days actually worked in it', () => {
-  const rates = effectivePerDay(gapSpans, julyIdle);
-  // Span 3 lost July, so its 22,50,000 is earned over 15 days, not 46.
-  assert.equal(rates[2], 2_250_000 / 15);
-  // The spans that were worked in full keep the rate they always had.
+test('spanPerDay divides a span value by the days the span itself holds', () => {
+  const rates = spanPerDay(gapSpans);
+  // Span 3 lost July, but its rate is unmoved: 22,50,000 over the 46 days it spans.
+  assert.equal(rates[2], 2_250_000 / 46);
   assert.equal(rates[0], 750_000 / 46);
 });
 
-test('a month with no work bills nothing and its span-mates absorb its share', () => {
+test('a month bills its own days alone, whatever the other months record', () => {
   const sched = buildSchedule(julyIdle, gapSpans, new Map());
   assert.equal(sched.rows.find((r) => r.month === '2023-07'), undefined);
-  // August carries the whole of span 3 plus its own 16 days of span 4.
-  assert.equal(sched.rows.find((r) => r.month === '2023-08')!.computed, 2_783_333);
-  assert.equal(sched.total, WG);
+  // August's 15 days of span 3 and 16 of span 4 at each span's own rate.
+  const august = 15 * (2_250_000 / 46) + 16 * (1_500_000 / 45);
+  // Whole rupees, allocated by largest remainder, so it lands within one of the exact figure.
+  assert.ok(Math.abs(sched.rows.find((r) => r.month === '2023-08')!.computed - august) <= 1);
+  // July's 31 unrecorded days of span 3 are simply not billed.
+  assert.ok(sched.total < WG);
+});
+
+test('a day entered in one month leaves the other months alone', () => {
+  const before = buildSchedule(julyIdle, gapSpans, new Map());
+  const after = buildSchedule(
+    julyIdle.map((r) => (r.month === '2023-07' ? { month: r.month, spanDays: [0, 0, 1, 0] as [number, number, number, number] } : r)),
+    gapSpans, new Map(),
+  );
+  for (const month of ['2023-04', '2023-05', '2023-06', '2023-08', '2023-09']) {
+    assert.equal(
+      after.rows.find((r) => r.month === month)!.computed,
+      before.rows.find((r) => r.month === month)!.computed,
+      `${month} moved`,
+    );
+  }
 });
 
 test('a span with no worked days at all leaves the schedule short', () => {
@@ -131,8 +148,8 @@ test('a span with no worked days at all leaves the schedule short', () => {
   assert.equal(buildSchedule(spanIdle, gapSpans, new Map()).total, 4_500_000);
 });
 
-test('the schedule reports the rates it actually billed at', () => {
+test('the schedule reports the days recorded and the rate each span bills at', () => {
   const sched = buildSchedule(julyIdle, gapSpans, new Map());
   assert.deepEqual(sched.workedDays, [46, 45, 15, 45]);
-  assert.equal(sched.perDay[2], 2_250_000 / 15);
+  assert.equal(sched.perDay[2], 2_250_000 / 46);
 });

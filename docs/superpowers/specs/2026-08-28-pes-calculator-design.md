@@ -103,12 +103,11 @@ s  = [v1, v2−v1, v3−v2, v4−v3]  =  [W/8, W/4, 3W/8, W/4]  (span value)
 `round` is half-away-from-zero to zero decimals, matching Excel's `ROUND`.
 
 For each month the operator enters days worked in each of the four spans. The
-per-day rate divides a span's value by the days actually **worked** in it — not
-by `d`, the days it spans:
+per-day rate divides a span's value by `d`, the days the span itself holds — as
+the source workbook does:
 
 ```
-w  = [Σ_m days[m][1], Σ_m days[m][2], Σ_m days[m][3], Σ_m days[m][4]]
-r  = [s1/w1, s2/w2, s3/w3, s4/w4]                         (per-day rate)
+r  = [s1/d1, s2/d2, s3/d3, s4/d4]                         (per-day rate)
 
 monthly_amount(m)   = Σ_i  days[m][i] × r[i]
 quarterly_amount(q) = Σ  monthly_amount(m)  for m in calendar quarter q
@@ -116,26 +115,29 @@ quarterly_amount(q) = Σ  monthly_amount(m)  for m in calendar quarter q
 
 Calendar quarters are Jan–Mar, Apr–Jun, Jul–Sep, Oct–Dec.
 
-**A month in which no work was done bills nothing.** It contributes no days, so
-its amount is zero and it does not appear in the schedule at all. Its share of
-the span is carried by the months of that same span that *were* worked, which
-keeps the schedule on the Work Done Amount and leaves the 1/8, 1/4, 3/8, 1/4
-S-curve intact.
+**A month is worth its own days and nothing else.** The rate is fixed by the
+span, so a day entered against one month cannot change what any other month
+bills. A month with no days recorded bills nothing and does not appear in the
+schedule at all.
 
-Dividing by `d` instead — as this spec required until the rule above replaced
-it, and as the source workbook did — left that share unbilled. A six-month
-contract with one idle month totalled short by the whole of the idle month's
-value, and the shortfall surfaced as a `schedule_drift` the operator could not
-clear by any edit except hand-shuffling days into months that had not been
-worked. When every span is worked in full, `w = d` and the two rules agree, so
-Agreement 168 is unaffected.
+Between 2026-09-07 and 2026-09-12 this spec required `r = s/w`, dividing instead
+by `w`, the days actually **worked** in each span, so that an idle month's share
+passed to the months of its span that were worked and the schedule always landed
+on the Work Done Amount. The operator — who prepares these bills — reports that
+practice is the workbook rule above: each span bills its own rate per day, and
+days nobody worked are simply days nobody bills. Dividing by `w` also made every
+month's amount depend on every other month's days, so recording one more day in
+an idle month visibly moved the figures of months already checked. When every
+span is worked in full the two rules agree, `w = d`, and Agreement 168 reproduces
+either way.
 
-A span with **no** worked days at all is a different matter: its value has
-nowhere to go, its rate is zero, and the schedule genuinely falls short. That is
-a gap in the days recorded, and it is reported as `unworked_span`.
+**Days nobody worked are money nobody bills.** They leave the schedule short of
+the Work Done Amount, and days recorded beyond a span's length leave it over.
+Both are gaps in the grid rather than in the arithmetic, and both are reported as
+`unbilled_days`, naming the spans and the amount involved.
 
 A short schedule therefore has two causes, and they are fixed on different
-stages: `unworked_span` for days that were never recorded, entered in the
+stages: `unbilled_days` for days that do not fill their spans, entered in the
 spanwise grid on **Main Data**; and `schedule_drift` for a schedule whose
 adjustments do not net to zero, edited on **Base Rate**. Reporting both as
 `schedule_drift` sent an operator with unrecorded days to Base Rate, where there
@@ -305,7 +307,7 @@ Clause-45 exists in exactly one place and is unit-tested in isolation.
 |---|---|---|
 | `types.ts` | domain types, component keys, base-rule enum | — |
 | `dates.ts` | month keys, calendar-quarter grouping, Excel-serial import | — |
-| `spans.ts` | §3.1 — period → spans → worked-day rates → monthly/quarterly amounts | dates |
+| `spans.ts` | §3.1 — period → spans → per-day rates → monthly/quarterly amounts | dates |
 | `indices.ts` | §3.2/§3.3 — rate lookup, quarter means, base-rate resolution | dates |
 | `escalation.ts` | §3.4 — per-component amounts, grand total, payable | all above |
 

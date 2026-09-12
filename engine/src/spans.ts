@@ -67,29 +67,25 @@ export function workedDays(progress: ProgressRow[]): [number, number, number, nu
 }
 
 /**
- * The rate each span is actually billed at: its value over the days worked in
- * it, not the days it spans. A month in which no work was done contributes no
- * days, so it bills nothing and the months that were worked carry its share -
- * which keeps the schedule on the work done amount. Dividing by the calendar
- * days instead left that share unbilled, and the shortfall was reported as a
- * drift the operator could not clear.
+ * Spec 3.1. The rate a span bills at: its value over the days it spans. Every
+ * day recorded against a span earns that same rate, so a month is worth its own
+ * days and nothing else - entering a day in one month cannot move what another
+ * month bills, which dividing by the days actually worked did.
  *
- * A span with no worked days at all has nowhere to put its value. The rate is
- * zero and the schedule falls short, which `calculate` reports as drift.
+ * Days nobody worked are days nobody bills: their share of the work done amount
+ * stays unbilled and the schedule falls short, which `calculate` reports
+ * against the days that are missing rather than against the schedule.
  */
-export function effectivePerDay(
-  spans: SpanTable, progress: ProgressRow[],
-): [number, number, number, number] {
-  const worked = workedDays(progress);
+export function spanPerDay(spans: SpanTable): [number, number, number, number] {
   return [0, 1, 2, 3].map((i) =>
-    worked[i] === 0 ? 0 : spans.values[i]! / worked[i]!,
+    spans.days[i] === 0 ? 0 : spans.values[i]! / spans.days[i]!,
   ) as [number, number, number, number];
 }
 
 /** Exact, unrounded amount earned in each month across all four spans. */
 export function monthlyExact(progress: ProgressRow[], spans: SpanTable): Map<Month, number> {
   const out = new Map<Month, number>();
-  const perDay = effectivePerDay(spans, progress);
+  const perDay = spanPerDay(spans);
   for (const row of progress) {
     let amount = 0;
     for (let i = 0; i < 4; i++) amount += (row.spanDays[i] ?? 0) * (perDay[i] ?? 0);
@@ -139,7 +135,7 @@ export interface PaymentSchedule {
   rows: ScheduleRow[];
   total: number;
   byQuarter: Map<Quarter, number>;
-  /** Days worked in each span, and the rate each was billed at. */
+  /** Days recorded in each span, and the rate each span bills at. */
   workedDays: [number, number, number, number];
   perDay: [number, number, number, number];
 }
@@ -174,6 +170,6 @@ export function buildSchedule(
   return {
     rows, total, byQuarter,
     workedDays: workedDays(progress),
-    perDay: effectivePerDay(spans, progress),
+    perDay: spanPerDay(spans),
   };
 }

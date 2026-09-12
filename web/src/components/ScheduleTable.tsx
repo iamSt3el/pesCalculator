@@ -41,15 +41,16 @@ export function ScheduleTable() {
   // The engine owns the rule for what counts as drift — the schedule is allocated
   // in whole rupees, so it cannot match an amount carrying paise exactly. Render
   // its finding rather than recomputing a second, subtly different one here.
-  const drifted = calculation.problems.some((p) => p.code === 'schedule_drift');
+  const drifted = calculation.problems.some(
+    (p) => p.code === 'schedule_drift' || p.code === 'unbilled_days');
   const drift = calculation.schedule.total - bundle.contract.workDoneAmount;
 
   return (
     <section className="section">
       <div className="section-head"><h2>Schedule of payment</h2></div>
       <p className="subtitle">
-        Computed from the days entered on Main Data, allocated so the months total the work done
-        amount exactly.
+        Computed from the days entered on Main Data, allocated in whole rupees so the months
+        total exactly what those days earn.
         {/* Provenance belongs on the filed bill; an instruction for whoever is
             editing it does not, and on paper it cost a line of the sheet. */}
         <span className="no-print"> Adjust any month to match the bill actually paid.</span>

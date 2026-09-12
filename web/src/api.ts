@@ -121,7 +121,7 @@ export interface ResolvedBase {
 
 export interface Problem {
   code: 'missing_rates' | 'percent_total' | 'zero_base' | 'invalid_period'
-    | 'schedule_drift' | 'unworked_span' | 'impossible_days';
+    | 'schedule_drift' | 'unbilled_days' | 'impossible_days';
   message: string;
   months?: string[];
 }

@@ -117,18 +117,53 @@ test('an unworked span is reported against the days, not the schedule', () => {
       : p.month === '2024-02' ? { month: p.month, spanDays: [0, 0, 0, 0] as [number, number, number, number] }
       : p),
   });
-  const problem = r.problems.find((p) => p.code === 'unworked_span');
-  assert.ok(problem, 'an unworked span should be reported under its own code');
+  const problem = r.problems.find((p) => p.code === 'unbilled_days');
+  assert.ok(problem, 'days with no span to bill on should be reported under their own code');
   assert.match(problem.message, /span 4/i);
   // It is the days that are missing, so it must not masquerade as schedule drift.
   assert.equal(r.problems.some((p) => p.code === 'schedule_drift'), false);
 });
 
+test('days short of a span are reported too, not only a span with none at all', () => {
+  const r = calculate({
+    ...input,
+    // Two of February's 23 days of span 4 are never recorded.
+    progress: PROGRESS_168.map((p) =>
+      p.month === '2024-02' ? { month: p.month, spanDays: [0, 0, 0, 21] as [number, number, number, number] } : p),
+  });
+  const problem = r.problems.find((p) => p.code === 'unbilled_days');
+  assert.ok(problem, 'a span short of days should be reported against the grid');
+  assert.match(problem.message, /span 4/i);
+  // Two days of span 4, at that span's own rate, go unbilled.
+  assert.match(problem.message, /285754\.72/);
+  assert.equal(r.problems.some((p) => p.code === 'schedule_drift'), false);
+});
+
+test('days recorded beyond a span are reported as billing over the amount', () => {
+  const r = calculate({
+    ...input,
+    progress: PROGRESS_168.map((p) =>
+      p.month === '2024-02' ? { month: p.month, spanDays: [0, 0, 0, 25] as [number, number, number, number] } : p),
+  });
+  const problem = r.problems.find((p) => p.code === 'unbilled_days');
+  assert.ok(problem, 'an over-recorded span should be reported against the grid');
+  assert.match(problem.message, /over the work done amount/i);
+});
+
 test('a schedule short for any other reason is still reported as drift', () => {
-  // Every span is worked; an adjustment that does not net to zero moves the total.
+  // Every span is worked in full; an adjustment that does not net to zero moves the total.
   const r = calculate({ ...input, adjustments: new Map([['2024-02', 5000]]) });
   assert.equal(r.problems.some((p) => p.code === 'schedule_drift'), true);
-  assert.equal(r.problems.some((p) => p.code === 'unworked_span'), false);
+  assert.equal(r.problems.some((p) => p.code === 'unbilled_days'), false);
+});
+
+test('a month bills the same whatever another month records', () => {
+  const january = (progress: typeof PROGRESS_168) =>
+    calculate({ ...input, progress }).schedule.rows.find((r) => r.month === '2024-01')!.computed;
+  // September idle, its six days of span 1 unrecorded.
+  const idle = PROGRESS_168.map((p) =>
+    p.month === '2023-09' ? { month: p.month, spanDays: [0, 0, 0, 0] as [number, number, number, number] } : p);
+  assert.equal(january(idle), january(PROGRESS_168));
 });
 
 test('more days in a month than it has inside the period is reported', () => {

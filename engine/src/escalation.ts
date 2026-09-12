@@ -25,7 +25,7 @@ export interface EscalationLine {
 
 export interface Problem {
   code: 'missing_rates' | 'percent_total' | 'zero_base' | 'invalid_period'
-    | 'schedule_drift' | 'unworked_span' | 'impossible_days';
+    | 'schedule_drift' | 'unbilled_days' | 'impossible_days';
   message: string;
   months?: Month[];
 }
@@ -99,9 +99,10 @@ export function calculate(input: CalculationInput): CalculationResult {
     ? computeSpans(contract.commencement, contract.actualCompletion, contract.workDoneAmount)
     : emptySpanTable();
   const schedule = buildSchedule(progress, spans, adjustments);
-  // A span with no days recorded has nowhere to bill its value, and its share of
-  // the work done amount goes unbilled.
-  const unworked = [0, 1, 2, 3].filter((i) => spans.days[i]! > 0 && schedule.workedDays[i] === 0);
+  // A span bills its own rate for every day recorded against it, so days never
+  // recorded are days nobody bills, and days recorded beyond a span's length are
+  // days billed twice. Either way the schedule misses the work done amount.
+  const misrecorded = [0, 1, 2, 3].filter((i) => schedule.workedDays[i] !== spans.days[i]);
   // The monthly figures are allocated in whole rupees (spec 3.5), so the schedule
   // can only ever reach the work done amount rounded. Comparing against the
   // unrounded figure reported a drift that no edit could clear, which left every
@@ -111,12 +112,15 @@ export function calculate(input: CalculationInput): CalculationResult {
     // Data, while the schedule's adjustments are edited on Base Rate. Reporting
     // both alike sent an operator with unrecorded days to Base Rate, where there
     // is nothing to fix.
-    if (unworked.length > 0) {
-      const named = unworked.map((i) => `span ${i + 1}`).join(', ');
-      const stranded = unworked.reduce((a, i) => a + spans.values[i]!, 0);
+    if (misrecorded.length > 0) {
+      const named = misrecorded.map((i) => `span ${i + 1}`).join(', ');
+      const unbilled = misrecorded.reduce(
+        (a, i) => a + (spans.days[i]! - schedule.workedDays[i]!) * schedule.perDay[i]!, 0);
       problems.push({
-        code: 'unworked_span',
-        message: `No days are recorded against ${named}, so ${stranded.toFixed(2)} of the work done amount has no days to be billed over.`,
+        code: 'unbilled_days',
+        message: unbilled >= 0
+          ? `The days recorded do not fill ${named}, so ${unbilled.toFixed(2)} of the work done amount has no day to be billed on.`
+          : `More days are recorded against ${named} than ${misrecorded.length === 1 ? 'it holds' : 'they hold'}, so the schedule bills ${(-unbilled).toFixed(2)} over the work done amount.`,
       });
     } else {
       problems.push({
@@ -126,9 +130,9 @@ export function calculate(input: CalculationInput): CalculationResult {
     }
   }
 
-  // Days recorded beyond what a month holds inside the period lower the span's
-  // per-day rate and mis-bill every month in it. Nothing checked this: `max=31`
-  // on the input is a hint the browser does not enforce, and the API takes any
+  // Days recorded beyond what a month holds inside the period bill more of the
+  // span than the month can have earned. Nothing checked this: `max=31` on the
+  // input is a hint the browser does not enforce, and the API takes any
   // non-negative integer.
   const monthDays = hasPeriod
     ? availableDays(contract.commencement, contract.actualCompletion)
