@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { assembleCalculation, serialiseResult } from '../src/assemble.ts';
 import {
-  createContract, replaceAdjustments, replaceComponents, replaceProgress, updateContract,
+  createContract, replaceAdjustments, replaceComponents, replaceExpenditure, replaceProgress,
+  updateContract,
 } from '../src/repo/contracts.ts';
 import { upsertRates } from '../src/repo/rates.ts';
 import { pool } from '../src/db.ts';
@@ -90,6 +91,24 @@ test('editing a day count changes the schedule rather than leaving a stale amoun
   const result = await assembleCalculation(contractId);
   assert.equal(result!.schedule.rows.find((r) => r.month === '2023-09')!.computed, 500_071);
   assert.equal(result!.schedule.total, 21_717_359);
+});
+
+test('the execution basis bills the stored expenditure, and the grid still shows its days', async () => {
+  await replaceExpenditure(contractId, [
+    { month: '2023-09', amount: 428_632 }, { month: '2023-10', amount: 2_214_599 },
+    { month: '2023-11', amount: 4_214_882 }, { month: '2023-12', amount: 6_000_849 },
+    { month: '2024-01', amount: 5_572_217 }, { month: '2024-02', amount: 3_286_180 },
+  ]);
+  await updateContract(contractId, { scheduleBasis: 'execution' });
+  const result = await assembleCalculation(contractId);
+  assert.deepEqual(result!.problems, []);
+  assert.equal(result!.schedule.basis, 'execution');
+  assert.equal(result!.payable, 172_604);
+
+  const wire = JSON.parse(JSON.stringify(serialiseResult(result!)));
+  // The days edited above earn 5,00,071 in September, whatever the basis.
+  assert.equal(wire.schedule.spanwise['2023-09'], 500_071);
+  await updateContract(contractId, { scheduleBasis: 'spanwise' });
 });
 
 test('an unknown contract yields null rather than throwing', async () => {

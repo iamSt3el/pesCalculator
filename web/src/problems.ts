@@ -64,6 +64,12 @@ const OWNERS: Record<string, Owner> = {
     stage: 'mainData', path: '',
     blocks: ['mainData', 'baseRate', 'calculation', 'print'],
   },
+  // Execution-wise expenditure that misses the work done amount is typed in its
+  // own table on Main Data, beside the spanwise grid.
+  expenditure_drift: {
+    stage: 'mainData', path: '',
+    blocks: ['mainData', 'baseRate', 'calculation', 'print'],
+  },
   // Days that do not fit the month they are recorded in, fixed in the same grid.
   impossible_days: {
     stage: 'mainData', path: '',

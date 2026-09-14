@@ -5,7 +5,7 @@ import { requireAuth } from '../auth/middleware.ts';
 import { calculationRouter } from './calculation.ts';
 import {
   contractOwnerId, createContract, deleteContract, getContract,
-  replaceAdjustments, replaceComponents, replaceProgress, updateContract,
+  replaceAdjustments, replaceComponents, replaceExpenditure, replaceProgress, updateContract,
 } from '../repo/contracts.ts';
 
 const monthString = z.string().regex(/^\d{4}-\d{2}$/, 'Month must be YYYY-MM');
@@ -19,6 +19,7 @@ const contractPatch = z.object({
   stipulatedCompletion: dateString, actualCompletion: dateString,
   bitumenOffsetDays: z.number().int().min(0).max(365),
   alreadyPaid: z.number(),
+  scheduleBasis: z.enum(['spanwise', 'execution']),
 }).partial();
 
 const componentsBody = z.array(z.object({
@@ -46,6 +47,9 @@ export const progressBody = z.array(z.object({
 })).refine(monthsAreDistinct, { message: DUPLICATE_MONTH });
 
 export const adjustmentsBody = z.array(z.object({ month: monthString, adjustment: z.number() }))
+  .refine(monthsAreDistinct, { message: DUPLICATE_MONTH });
+
+export const expenditureBody = z.array(z.object({ month: monthString, amount: z.number() }))
   .refine(monthsAreDistinct, { message: DUPLICATE_MONTH });
 
 export const contractsRouter: Router = Router();
@@ -127,3 +131,4 @@ function replaceRoute<T>(
 replaceRoute('components', componentsBody, replaceComponents);
 replaceRoute('progress', progressBody, replaceProgress);
 replaceRoute('payments', adjustmentsBody, replaceAdjustments);
+replaceRoute('expenditure', expenditureBody, replaceExpenditure);

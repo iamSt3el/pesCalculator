@@ -13,6 +13,7 @@ export async function assembleCalculation(contractId: number): Promise<Calculati
     rates: await listRates(),
     progress: bundle.progress,
     adjustments: new Map(bundle.adjustments.map((a) => [a.month, a.adjustment])),
+    expenditure: new Map(bundle.expenditure.map((e) => [e.month, e.amount])),
   });
 }
 
@@ -46,6 +47,7 @@ export async function listContractSummaries(ownerId: number): Promise<ContractSu
     const result = calculate({
       contract, components: b.components, rates, progress: b.progress,
       adjustments: new Map(b.adjustments.map((a) => [a.month, a.adjustment])),
+      expenditure: new Map(b.expenditure.map((e) => [e.month, e.amount])),
     });
 
     return {
@@ -69,7 +71,10 @@ export interface SerialisedResult extends Omit<
   bases: Record<string, unknown>;
   componentTotals: Record<string, number>;
   monthDays: Record<string, number>;
-  schedule: Omit<CalculationResult['schedule'], 'byQuarter'> & { byQuarter: Record<string, number> };
+  schedule: Omit<CalculationResult['schedule'], 'byQuarter' | 'spanwise'> & {
+    byQuarter: Record<string, number>;
+    spanwise: Record<string, number>;
+  };
 }
 
 /** JSON.stringify renders a Map as {}. Flatten every Map before responding. */
@@ -79,6 +84,10 @@ export function serialiseResult(r: CalculationResult): SerialisedResult {
     bases: fromMap(r.bases),
     componentTotals: fromMap(r.componentTotals),
     monthDays: fromMap(r.monthDays),
-    schedule: { ...r.schedule, byQuarter: fromMap(r.schedule.byQuarter) },
+    schedule: {
+      ...r.schedule,
+      byQuarter: fromMap(r.schedule.byQuarter),
+      spanwise: fromMap(r.schedule.spanwise),
+    },
   };
 }

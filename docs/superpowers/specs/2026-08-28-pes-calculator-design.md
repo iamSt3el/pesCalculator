@@ -70,6 +70,8 @@ of scope.
 | Component factors | M4:M9 | 0.75 ×5, 0.85 for Bitumen |
 | Bitumen base offset (days) | L13 | 28 |
 | Days worked per month, per span | D30:D65, F, H, J | — |
+| Expenditure per month, execution wise | — (added 2026-09-14, §3.6) | — |
+| Schedule basis: span wise or execution wise | — (chosen on Base Rate, §3.6) | span wise |
 | Already-paid escalation | 'Calculation PES'!O48 | 0 |
 
 Percentages must total 100 (L10 asserts this). In the source, POL and Bitumen were
@@ -117,8 +119,8 @@ Calendar quarters are Jan–Mar, Apr–Jun, Jul–Sep, Oct–Dec.
 
 **A month is worth its own days and nothing else.** The rate is fixed by the
 span, so a day entered against one month cannot change what any other month
-bills. A month with no days recorded bills nothing and does not appear in the
-schedule at all.
+bills. A month with no days recorded bills nothing; it still appears in the
+schedule, at zero (§3.5).
 
 Between 2026-09-07 and 2026-09-12 this spec required `r = s/w`, dividing instead
 by `w`, the days actually **worked** in each span, so that an idle month's share
@@ -261,9 +263,16 @@ schedule still totals the Work Done Amount of 21,717,359.
 payment_month = round(monthly_amount, 0) + adjustment
 ```
 
-The schedule lists every month whose computed amount is non-zero, plus any month the
-operator has given an adjustment. In the source contract that is Sep-2023 through
-Feb-2024 — the six months carrying work.
+The schedule lists **every month of the period**, plus any month outside it that
+carries a computed amount or an operator adjustment. A month with nothing in it is
+listed at zero rather than left out, and so is its quarter in the quarterly totals —
+the operator's rule is that months and quarters stay complete even when the
+expenditure comes to zero. In the source contract that is Sep-2023 through
+Feb-2024, all six of which carry work.
+
+Until 2026-09-14 the schedule listed only the months whose computed amount was
+non-zero, so an idle month vanished from Base Rate while the bill below it still
+carried the month's quarter at zero (§3.3).
 
 **Rounding must preserve what was earned.** The largest-remainder pass targets the
 sum of the exact monthly amounts, rounded — not the Work Done Amount. Aiming at
@@ -285,6 +294,44 @@ to the paisa and the same payable of ₹1,72,604.
 The UI warns, without blocking, when the schedule total drifts from the Work Done
 Amount. Bitumen consumes the monthly figures; the other five consume the quarterly
 sums of the same figures.
+
+### 3.6 Schedule basis: span wise or execution wise
+
+Added 2026-09-14 on the operator's instruction. Main Data carries two records of
+the work done month by month:
+
+- **A — Expenditure span wise.** The spanwise grid of §3.1: days per span per
+  month, each month earning its days at its spans' rates.
+- **B — Expenditure execution wise.** One figure per month of the period, typed by
+  hand as the work was actually executed. Nothing in it is calculated.
+
+The Schedule of payment on Base Rate has a **Select option** choosing which of the
+two it bills from; the contract stores the choice (`schedule_basis`, span wise by
+default, so every contract made before this change bills exactly as it did).
+
+```
+computed_month = allocated(monthly_amount(m))     span wise   (§3.1, §3.5)
+computed_month = expenditure(m)                   execution wise, as entered
+payment_month  = computed_month + adjustment
+```
+
+Everything downstream — the quarterly totals, the five quarterly components and
+Bitumen's monthly lines — reads `payment_month` and is unchanged. The adjustments
+apply on either basis. The execution-wise figures are typed to the paise and
+billed as they stand, so they are not re-rounded to whole rupees.
+
+The basis decides what is checked, because only the record being billed can move
+the bill:
+
+- **Span wise** — `unbilled_days`, `schedule_drift` and `impossible_days` as in
+  §3.1 and §3.5. Execution-wise figures are kept but not billed, and not checked.
+- **Execution wise** — the expenditure is held to the Work Done Amount to the
+  paise. When it misses, `expenditure_drift` is reported against Main Data, where
+  the figures are typed; when it matches but the adjustments do not net to zero,
+  `schedule_drift` is reported against Base Rate. The spanwise grid bills nothing
+  on this basis, so neither `unbilled_days` nor `impossible_days` is reported.
+
+The spanwise grid always shows what its own days earn, whichever basis is chosen.
 
 ## 4. Architecture
 
@@ -337,9 +384,10 @@ All monetary and index values use `NUMERIC`, never floating point. The workbook'
 | `users` | id, email (unique), password_hash, role, created_at | argon2 hashes |
 | `session` | managed by connect-pg-simple | survives restarts |
 | `rates` | month (DATE, PK), labour, material, cement, steel, pol, bitumen_g, bitumen_h, source | **global master** |
-| `contracts` | id, agreement_no, contractor, work_name, wo_no_date, wo_amount, work_done_amount, bid_date, commencement, stipulated_completion, actual_completion, bitumen_offset_days, already_paid, created_at, updated_at | |
+| `contracts` | id, agreement_no, contractor, work_name, wo_no_date, wo_amount, work_done_amount, bid_date, commencement, stipulated_completion, actual_completion, bitumen_offset_days, already_paid, schedule_basis, created_at, updated_at | `schedule_basis` is `spanwise \| execution` (§3.6) |
 | `components` | contract_id, key, percent, factor, base_rule, base_override | 6 rows per contract |
 | `progress` | contract_id, month, span1_days, span2_days, span3_days, span4_days | PK (contract_id, month) |
+| `expenditure` | contract_id, month, amount | PK (contract_id, month); execution-wise figures, typed by hand |
 | `payments` | contract_id, month, adjustment | PK (contract_id, month); computed part is derived, not stored |
 
 `components.key` is one of `labour | material | cement | steel | pol | bitumen`.
@@ -370,6 +418,7 @@ All routes below `/api` require an authenticated session.
 | PUT | `/api/contracts/:id/components` | percentages, factors, base rules and overrides |
 | PUT | `/api/contracts/:id/progress` | days per month per span |
 | PUT | `/api/contracts/:id/payments` | per-month adjustments |
+| PUT | `/api/contracts/:id/expenditure` | per-month execution-wise expenditure |
 | GET | `/api/contracts/:id/calculation` | the full computed result — every intermediate, not just the total |
 
 `GET /api/contracts/:id/calculation` returns the entire derivation: span table, base
@@ -382,15 +431,17 @@ is exactly what the server calculated.
 
 1. **Contracts** — list, create, open. Multiple agreements coexist.
 2. **Main Data** — agreement particulars; component percentage table with a live
-   "must total 100" check; spanwise grid for days per month. Span dates, per-day
-   rates and monthly/quarterly totals update as the operator types.
+   "must total 100" check; spanwise grid for days per month (A — expenditure span
+   wise) and a hand-typed figure per month (B — expenditure execution wise). Span
+   dates, per-day rates and monthly/quarterly totals update as the operator types.
 3. **Rates Chart** — editable grid seeded with the workbook's Apr-2023 → Aug-2026
    rows, with paste-from-Excel.
 4. **Index Average** — read-only. Shows which nine months were selected and each
    quarter's mean, so the selection can be audited at a glance.
 5. **Base Rate** — resolved base index per component, each showing the rule that
-   produced it and accepting an override; plus the Schedule of Payment, auto-filled
-   and editable, with a live total-drift warning.
+   produced it and accepting an override; plus the Schedule of Payment, filled from
+   whichever of A or B its Select option names (§3.6), editable, with a live
+   total-drift warning.
 6. **Calculation PES** — the report. Six component blocks showing each line of the
    formula with its operands, grand total, less already paid, rounded payable.
    Print-ready.
@@ -402,6 +453,7 @@ Validation is surfaced inline and never blocks typing:
 - component percentages not totalling 100
 - a month required by the calculation missing from the Rates Chart — named explicitly
 - payment schedule total drifting from the Work Done Amount
+- execution-wise expenditure not totalling the Work Done Amount, when billed
 - actual completion earlier than commencement
 - a base index resolving to zero, which would divide by zero
 

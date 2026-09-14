@@ -55,8 +55,12 @@ export function SpanwiseGrid() {
     saver.schedule(next);
   };
 
-  const amountFor = (month: string) =>
-    calculation?.schedule.rows.find((r) => r.month === month)?.computed ?? 0;
+  // What the days earn, not what the schedule bills: on the execution basis the
+  // two differ, and this grid is about the days.
+  const amountFor = (month: string) => calculation?.schedule.spanwise[month] ?? 0;
+  const spanwiseTotal = calculation
+    ? Object.values(calculation.schedule.spanwise).reduce((a, b) => a + b, 0)
+    : null;
 
   const spanTotals = [0, 1, 2, 3].map((i) => rows.reduce((a, r) => a + (r.spanDays[i] ?? 0), 0));
   // Days each month has inside the period: the ceiling on what can be recorded
@@ -126,6 +130,12 @@ export function SpanwiseGrid() {
         </div>
       )}
 
+      <p className="eyebrow">A · Expenditure span wise</p>
+      {contract.scheduleBasis === 'execution' && (
+        <p className="hint no-print">
+          The schedule of payment is set to execution wise, so these days are shown but not billed.
+        </p>
+      )}
       <div className="panel panel--flush scroller">
         <table className="grid">
           <thead>
@@ -172,7 +182,7 @@ export function SpanwiseGrid() {
                   </td>
                 );
               })}
-              <td className="num">{calculation ? formatRupees(calculation.schedule.total) : '—'}</td>
+              <td className="num">{spanwiseTotal !== null ? formatRupees(spanwiseTotal) : '—'}</td>
             </tr>
           </tfoot>
         </table>

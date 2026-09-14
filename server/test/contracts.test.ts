@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   contractOwnerId, createContract, getContract, listContracts, replaceComponents,
-  replaceProgress, replaceAdjustments, updateContract, deleteContract,
+  replaceProgress, replaceAdjustments, replaceExpenditure, updateContract, deleteContract,
 } from '../src/repo/contracts.ts';
 import { listBundles } from '../src/repo/contracts.ts';
 import { listContractSummaries } from '../src/assemble.ts';
-import { adjustmentsBody, progressBody } from '../src/routes/contracts.ts';
+import { adjustmentsBody, expenditureBody, progressBody } from '../src/routes/contracts.ts';
 import { pool } from '../src/db.ts';
 import { runMigrations } from '../src/migrate.ts';
 
@@ -115,6 +115,26 @@ test('replaceAdjustments stores only the operator adjustment', async () => {
   ]);
 });
 
+test('a new contract bills span wise, and the basis can be switched', async () => {
+  const c = await createContract('basis check', owner);
+  assert.equal(c.scheduleBasis, 'spanwise');
+  await updateContract(c.id, { scheduleBasis: 'execution' });
+  assert.equal((await getContract(c.id))!.contract.scheduleBasis, 'execution');
+});
+
+test('replaceExpenditure stores each month to the paise and replaces the whole set', async () => {
+  const c = await createContract('expenditure check', owner);
+  await replaceExpenditure(c.id, [
+    { month: '2025-01', amount: 807_684 },
+    { month: '2025-02', amount: 1_556_428.5 },
+  ]);
+  await replaceExpenditure(c.id, [{ month: '2025-02', amount: 1_556_428.55 }]);
+  assert.deepEqual((await getContract(c.id))!.expenditure,
+    [{ month: '2025-02', amount: 1_556_428.55 }]);
+  assert.deepEqual((await listBundles(owner)).find((b) => b.contract.id === c.id)!.expenditure,
+    [{ month: '2025-02', amount: 1_556_428.55 }]);
+});
+
 test('deleting a contract removes its children', async () => {
   const c = await createContract('cascade check', owner);
   await replaceProgress(c.id, [{ month: '2023-09', spanDays: [1, 0, 0, 0] }]);
@@ -220,4 +240,13 @@ test('an adjustments payload naming the same month twice is refused', () => {
     { month: '2023-08', adjustment: 6 },
   ]);
   assert.equal(distinct.success, true);
+});
+
+test('an expenditure payload naming the same month twice is refused', () => {
+  const twice = expenditureBody.safeParse([
+    { month: '2025-01', amount: 5 },
+    { month: '2025-01', amount: 6 },
+  ]);
+  assert.equal(twice.success, false);
+  assert.equal(expenditureBody.safeParse([{ month: '2025-01', amount: 5 }]).success, true);
 });

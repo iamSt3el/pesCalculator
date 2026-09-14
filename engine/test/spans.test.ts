@@ -84,6 +84,25 @@ test('buildSchedule includes a month that has only an adjustment', () => {
   assert.equal(march?.payment, 1000);
 });
 
+test('buildSchedule on the execution basis takes the expenditure as it stands', () => {
+  const sched = buildSchedule(progress, spans, new Map([['2023-10', 100]]), {
+    basis: 'execution',
+    expenditure: new Map([['2023-09', 1234.56], ['2023-10', 0]]),
+  });
+  assert.equal(sched.basis, 'execution');
+  assert.deepEqual(sched.rows.map((r) => [r.month, r.computed, r.payment]),
+    [['2023-09', 1234.56, 1234.56], ['2023-10', 0, 100]]);
+  assert.equal(sched.total, 1334.56);
+  // What the days earn is still carried, for the spanwise grid to show.
+  assert.equal(sched.spanwise.get('2023-09'), 428_632);
+});
+
+test('buildSchedule lists every month of the period, whatever they carry', () => {
+  const sched = buildSchedule([], spans, new Map(), { months: ['2024-03', '2024-04'] });
+  assert.deepEqual(sched.rows.map((r) => [r.month, r.payment]), [['2024-03', 0], ['2024-04', 0]]);
+  assert.deepEqual([...sched.byQuarter], [['2024-Q1', 0], ['2024-Q2', 0]]);
+});
+
 // A period whose spans are easy to read: 46/45/46/45 days carrying
 // 7,50,000 / 15,00,000 / 22,50,000 / 15,00,000 of a 60,00,000 work done amount.
 const WG = 6_000_000;

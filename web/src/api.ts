@@ -47,6 +47,7 @@ export const api = {
   putComponents: (id: number, rows: ComponentConfig[]) => send<ContractBundle>(`/api/contracts/${id}/components`, 'PUT', rows),
   putProgress: (id: number, rows: ProgressRow[]) => send<ContractBundle>(`/api/contracts/${id}/progress`, 'PUT', rows),
   putPayments: (id: number, rows: AdjustmentRow[]) => send<ContractBundle>(`/api/contracts/${id}/payments`, 'PUT', rows),
+  putExpenditure: (id: number, rows: ExpenditureRow[]) => send<ContractBundle>(`/api/contracts/${id}/expenditure`, 'PUT', rows),
   getCalculation: (id: number) => call<Calculation>(`/api/contracts/${id}/calculation`),
 };
 
@@ -79,16 +80,26 @@ export interface ComponentConfig {
   baseRule: BaseRule; baseOverride: number | null;
 }
 
+/** What the schedule of payment bills from: the spanwise days, or the expenditure typed per month. */
+export type ScheduleBasis = 'spanwise' | 'execution';
+
+export const SCHEDULE_BASIS_LABELS: Record<ScheduleBasis, string> = {
+  spanwise: 'A · Expenditure span wise',
+  execution: 'B · Expenditure execution wise',
+};
+
 export interface Contract {
   id: number;
   agreementNo: string; contractor: string; workName: string; woNoDate: string;
   woAmount: number; workDoneAmount: number;
   bidDate: string; commencement: string; stipulatedCompletion: string; actualCompletion: string;
   bitumenOffsetDays: number; alreadyPaid: number;
+  scheduleBasis: ScheduleBasis;
 }
 
 export interface ProgressRow { month: string; spanDays: [number, number, number, number] }
 export interface AdjustmentRow { month: string; adjustment: number }
+export interface ExpenditureRow { month: string; amount: number }
 export interface ContractSummary {
   id: number; agreementNo: string; contractor: string; workName: string;
   updatedAt: string;
@@ -103,6 +114,7 @@ export interface ContractBundle {
   components: ComponentConfig[];
   progress: ProgressRow[];
   adjustments: AdjustmentRow[];
+  expenditure: ExpenditureRow[];
 }
 
 export interface EscalationLine {
@@ -121,7 +133,7 @@ export interface ResolvedBase {
 
 export interface Problem {
   code: 'missing_rates' | 'percent_total' | 'zero_base' | 'invalid_period'
-    | 'schedule_drift' | 'unbilled_days' | 'impossible_days';
+    | 'schedule_drift' | 'unbilled_days' | 'impossible_days' | 'expenditure_drift';
   message: string;
   months?: string[];
 }
@@ -138,7 +150,10 @@ export interface Calculation {
   /** Days each month has inside the contract period, keyed 'YYYY-MM'. */
   monthDays: Record<string, number>;
   schedule: {
+    basis: ScheduleBasis;
     rows: ScheduleRow[];
+    /** What each month's days earn span wise, whichever basis the schedule bills from. */
+    spanwise: Record<string, number>;
     total: number;
     byQuarter: Record<string, number>;
     workedDays: [number, number, number, number];

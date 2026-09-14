@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api, type Contract } from '../api.ts';
 import { ComponentTable } from '../components/ComponentTable.tsx';
+import { ExecutionGrid } from '../components/ExecutionGrid.tsx';
 import { SpanwiseGrid } from '../components/SpanwiseGrid.tsx';
 import { PrintButton } from '../components/PrintButton.tsx';
 import { useContract, useReportSave } from '../ContractLayout.tsx';
@@ -19,7 +20,10 @@ export function MainDataPage() {
   const [form, setForm] = useState<Contract>(bundle.contract);
 
   const saver = useDebouncedSave<Contract>(async (next) => {
-    const { id, ...patch } = next;
+    // The basis is chosen on Base Rate. Sending this page's copy back would
+    // overwrite that choice with whatever it was when the page opened.
+    const { id, scheduleBasis, ...patch } = next;
+    void scheduleBasis;
     await api.putContract(id, patch);
     await reload();
   });
@@ -125,6 +129,7 @@ export function MainDataPage() {
 
       <ComponentTable />
       <SpanwiseGrid />
+      <ExecutionGrid />
     </>
   );
 }

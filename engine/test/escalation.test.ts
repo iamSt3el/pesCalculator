@@ -214,6 +214,68 @@ test('bitumen lists every month of the period, the idle ones at zero', () => {
   assert.equal(bitumen.find((l) => l.period === '2023-12')!.amount, 0);
 });
 
+test('the schedule lists every month of the period, the idle ones at zero', () => {
+  const r = calculate(SLOW);
+  assert.deepEqual(r.schedule.rows.map((x) => x.month), ['2023-12', '2024-01', '2024-02']);
+  assert.equal(r.schedule.rows[0]!.payment, 0);
+  assert.equal(r.schedule.byQuarter.get('2023-Q4'), 0);
+});
+
+// Agreement 168's monthly figures, entered by hand as expenditure rather than
+// earned by days.
+const EXECUTED_168 = new Map<string, number>([
+  ['2023-09', 428_632], ['2023-10', 2_214_599], ['2023-11', 4_214_882],
+  ['2023-12', 6_000_849], ['2024-01', 5_572_217], ['2024-02', 3_286_180],
+]);
+const EXECUTION = {
+  ...input,
+  contract: { ...CONTRACT_168, scheduleBasis: 'execution' as const },
+  expenditure: EXECUTED_168,
+};
+
+test('the execution basis bills the expenditure entered for each month', () => {
+  const r = calculate(EXECUTION);
+  assert.equal(r.schedule.basis, 'execution');
+  assert.equal(r.schedule.rows.find((x) => x.month === '2023-10')!.computed, 2_214_599);
+  // The adjustments still apply, so the same figures reproduce the workbook.
+  assert.equal(r.payable, 172604);
+  assert.deepEqual(r.problems, []);
+});
+
+test('on the execution basis the days bill nothing and are not checked', () => {
+  const noDays = calculate({ ...EXECUTION, progress: [] });
+  assert.equal(noDays.payable, 172604);
+  assert.deepEqual(noDays.problems, []);
+  // The spanwise grid still shows what its days earn, whatever the basis.
+  const noSpend = calculate({ ...EXECUTION, expenditure: new Map() });
+  assert.equal(noSpend.schedule.spanwise.get('2023-10'), 2_214_599);
+  assert.ok(noSpend.schedule.rows.every((x) => x.computed === 0));
+});
+
+test('expenditure short of the work done amount is reported against the expenditure', () => {
+  const short = new Map(EXECUTED_168).set('2024-02', 3_000_000);
+  const r = calculate({ ...EXECUTION, expenditure: short });
+  const problem = r.problems.find((p) => p.code === 'expenditure_drift');
+  assert.ok(problem, 'expenditure that misses the work done amount should be reported');
+  assert.match(problem.message, /21431179\.00/);
+  assert.equal(r.problems.some((p) => p.code === 'schedule_drift'), false);
+});
+
+test('on the execution basis, adjustments that do not net to zero are schedule drift', () => {
+  const r = calculate({ ...EXECUTION, adjustments: new Map([['2024-02', 5000]]) });
+  assert.equal(r.problems.some((p) => p.code === 'schedule_drift'), true);
+  assert.equal(r.problems.some((p) => p.code === 'expenditure_drift'), false);
+});
+
+test('a month with no expenditure stays on the schedule, and so does its quarter', () => {
+  const idle = new Map(EXECUTED_168);
+  idle.delete('2023-09');
+  const r = calculate({ ...EXECUTION, expenditure: idle, adjustments: new Map() });
+  assert.equal(r.schedule.rows.find((x) => x.month === '2023-09')!.payment, 0);
+  assert.equal(r.schedule.byQuarter.get('2023-Q3'), 0);
+  assert.deepEqual(r.quarters, ['2023-Q3', '2023-Q4', '2024-Q1']);
+});
+
 test('rates absent from a period that carries no value are not reported missing', () => {
   // Dec 2023 and Jan 2024 bill nothing, so their indices cannot change the bill.
   const r = calculate({ ...SLOW, rates: RATES_2023_24.filter((x) => x.month !== '2023-12') });

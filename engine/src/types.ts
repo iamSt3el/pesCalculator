@@ -7,6 +7,12 @@ export const COMPONENT_KEYS: readonly ComponentKey[] = [
 /** How a component's base index is derived from the rates chart. */
 export type BaseRule = 'quarter_average' | 'bid_month' | 'offset_month';
 
+/**
+ * What the schedule of payment bills from: the days entered span by span, or
+ * the expenditure entered by hand for each month as the work was executed.
+ */
+export type ScheduleBasis = 'spanwise' | 'execution';
+
 export type Month = string;    // 'YYYY-MM'
 export type Quarter = string;  // 'YYYY-Qn'
 export type IsoDate = string;  // 'YYYY-MM-DD'
@@ -46,6 +52,7 @@ export interface ContractInput {
   actualCompletion: IsoDate;
   bitumenOffsetDays: number;
   alreadyPaid: number;
+  scheduleBasis: ScheduleBasis;
 }
 
 export interface ProgressRow {

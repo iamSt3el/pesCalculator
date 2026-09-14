@@ -614,6 +614,7 @@ th.col-lg   { width: 230px; }
 .divider { margin-top: var(--s4); padding-top: var(--s4); border-top: 1px solid var(--rule); }
 .paste-area { width: 100%; font-family: var(--mono); font-size: var(--t-body); }
 .errors { margin: var(--s2) 0 0; padding-left: var(--s5); }
+.basis-field { max-width: 320px; margin-bottom: var(--s4); }
 .quarter-cell { min-width: 150px; }
 .quarter-cell .num { text-align: left; font-size: var(--t-h2); }
 .title--sub { margin-top: var(--s1); }

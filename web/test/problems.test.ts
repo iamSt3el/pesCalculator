@@ -74,6 +74,15 @@ test('days that do not fill their span point at Main Data, where they are entere
   assert.equal(blocked.has('indexAverage'), false);
 });
 
+test('expenditure that misses the work done amount points at Main Data, where it is typed', () => {
+  const [routed] = routeProblems([{ code: 'expenditure_drift', message: 'short' }]);
+  assert.equal(routed!.stage, 'mainData');
+  const blocked = blockedStages([{ code: 'expenditure_drift' }]);
+  assert.equal(blocked.has('baseRate'), true);
+  assert.equal(blocked.has('print'), true);
+  assert.equal(blocked.has('indexAverage'), false);
+});
+
 test('impossible days point at Main Data, where the grid is', () => {
   const [routed] = routeProblems([
     { code: 'impossible_days', message: 'too many days', months: ['2024-02'] },

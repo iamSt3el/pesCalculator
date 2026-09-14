@@ -1,5 +1,5 @@
 import { addDays, daysBetween, quarterOfMonth, roundHalfAwayFromZero } from './dates.ts';
-import type { IsoDate, Month, ProgressRow, Quarter } from './types.ts';
+import type { IsoDate, Month, ProgressRow, Quarter, ScheduleBasis } from './types.ts';
 
 export interface SpanTable {
   totalDays: number;
@@ -132,30 +132,56 @@ export interface ScheduleRow {
 }
 
 export interface PaymentSchedule {
+  basis: ScheduleBasis;
   rows: ScheduleRow[];
   total: number;
   byQuarter: Map<Quarter, number>;
+  /**
+   * What each month earns span wise, in whole rupees, whichever basis the
+   * schedule bills from - the spanwise grid on Main Data shows these.
+   */
+  spanwise: Map<Month, number>;
   /** Days recorded in each span, and the rate each span bills at. */
   workedDays: [number, number, number, number];
   perDay: [number, number, number, number];
 }
 
+export interface ScheduleOptions {
+  /** Span wise unless the contract says otherwise. */
+  basis?: ScheduleBasis;
+  /** The expenditure entered by hand for each month, read on the execution basis. */
+  expenditure?: Map<Month, number>;
+  /** Every month of the period, listed whether or not it carries anything. */
+  months?: Month[];
+}
+
 /**
- * Spec 3.5. Lists every month with a non-zero computed amount, plus any month
- * carrying an operator adjustment.
+ * Spec 3.5. Lists every month of the period, an idle one at zero, plus any
+ * other month carrying a computed amount or an operator adjustment.
+ *
+ * On the span-wise basis a month's computed figure is what its days earn; on
+ * the execution basis it is the expenditure entered for it, taken as it stands.
  */
 export function buildSchedule(
   progress: ProgressRow[],
   spans: SpanTable,
   adjustments: Map<Month, number>,
+  options: ScheduleOptions = {},
 ): PaymentSchedule {
+  const basis = options.basis ?? 'spanwise';
   const exact = monthlyExact(progress, spans);
   for (const [m, v] of exact) if (v === 0) exact.delete(m);
-  const allocated = allocateRupees(exact);
+  const spanwise = allocateRupees(exact);
 
-  const months = new Set<Month>([...allocated.keys(), ...adjustments.keys()]);
+  const executed = new Map(
+    [...(options.expenditure ?? new Map<Month, number>())].filter(([, v]) => v !== 0));
+  const computedFrom = basis === 'execution' ? executed : spanwise;
+
+  const months = new Set<Month>([
+    ...(options.months ?? []), ...computedFrom.keys(), ...adjustments.keys(),
+  ]);
   const rows: ScheduleRow[] = [...months].sort().map((month) => {
-    const computed = allocated.get(month) ?? 0;
+    const computed = computedFrom.get(month) ?? 0;
     const adjustment = adjustments.get(month) ?? 0;
     return { month, computed, adjustment, payment: computed + adjustment };
   });
@@ -168,7 +194,7 @@ export function buildSchedule(
 
   const total = roundHalfAwayFromZero(rows.reduce((a, r) => a + r.payment, 0), 2);
   return {
-    rows, total, byQuarter,
+    basis, rows, total, byQuarter, spanwise,
     workedDays: workedDays(progress),
     perDay: spanPerDay(spans),
   };

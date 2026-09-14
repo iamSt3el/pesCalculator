@@ -25,7 +25,7 @@ export interface EscalationLine {
 
 export interface Problem {
   code: 'missing_rates' | 'percent_total' | 'zero_base' | 'invalid_period'
-    | 'schedule_drift' | 'unbilled_days' | 'impossible_days';
+    | 'schedule_drift' | 'unbilled_days' | 'impossible_days' | 'expenditure_drift';
   message: string;
   months?: Month[];
 }
@@ -36,6 +36,8 @@ export interface CalculationInput {
   rates: RateRow[];
   progress: ProgressRow[];
   adjustments: Map<Month, number>;
+  /** Expenditure entered by hand per month, billed when the basis is execution. */
+  expenditure?: Map<Month, number>;
 }
 
 export interface CalculationResult {
@@ -98,16 +100,45 @@ export function calculate(input: CalculationInput): CalculationResult {
   const spans = hasPeriod
     ? computeSpans(contract.commencement, contract.actualCompletion, contract.workDoneAmount)
     : emptySpanTable();
-  const schedule = buildSchedule(progress, spans, adjustments);
+  // Every month of the period is listed on the schedule, an idle one at zero,
+  // so the schedule and its quarters cover the whole period the bill is for.
+  const periodMonths = monthsOfPeriod(contract.commencement, contract.actualCompletion);
+  const basis = contract.scheduleBasis ?? 'spanwise';
+  const expenditure = input.expenditure ?? new Map<Month, number>();
+  const schedule = buildSchedule(progress, spans, adjustments, {
+    basis, expenditure, months: periodMonths,
+  });
   // A span bills its own rate for every day recorded against it, so days never
   // recorded are days nobody bills, and days recorded beyond a span's length are
   // days billed twice. Either way the schedule misses the work done amount.
   const misrecorded = [0, 1, 2, 3].filter((i) => schedule.workedDays[i] !== spans.days[i]);
-  // The monthly figures are allocated in whole rupees (spec 3.5), so the schedule
-  // can only ever reach the work done amount rounded. Comparing against the
-  // unrounded figure reported a drift that no edit could clear, which left every
-  // contract whose amount carried paise permanently provisional.
-  if (schedule.total !== roundHalfAwayFromZero(contract.workDoneAmount)) {
+
+  if (basis === 'execution') {
+    // The expenditure is typed to the paise and billed as it stands, so it is
+    // held to the work done amount to the paise. Like the span-wise case, the
+    // two causes of a miss are fixed on different stages: the expenditure on
+    // Main Data, the adjustments on Base Rate.
+    const workDone = roundHalfAwayFromZero(contract.workDoneAmount, 2);
+    const spent = roundHalfAwayFromZero(
+      [...expenditure.values()].reduce((a, b) => a + b, 0), 2);
+    if (spent !== workDone) {
+      problems.push({
+        code: 'expenditure_drift',
+        message: `The execution-wise expenditure totals ${spent.toFixed(2)}, but the work done amount is ${workDone.toFixed(2)}.`,
+      });
+    } else if (schedule.total !== workDone) {
+      problems.push({
+        code: 'schedule_drift',
+        message: `Schedule totals ${schedule.total.toFixed(2)}, but the work done amount is ${contract.workDoneAmount.toFixed(2)}.`,
+      });
+    }
+  } else if (schedule.total !== roundHalfAwayFromZero(contract.workDoneAmount)) {
+    // The monthly figures are allocated in whole rupees (spec 3.5), so the
+    // schedule can only ever reach the work done amount rounded. Comparing
+    // against the unrounded figure reported a drift that no edit could clear,
+    // which left every contract whose amount carried paise permanently
+    // provisional.
+    //
     // The two causes are fixed on different stages: the days are entered on Main
     // Data, while the schedule's adjustments are edited on Base Rate. Reporting
     // both alike sent an operator with unrecorded days to Base Rate, where there
@@ -137,7 +168,9 @@ export function calculate(input: CalculationInput): CalculationResult {
   const monthDays = hasPeriod
     ? availableDays(contract.commencement, contract.actualCompletion)
     : new Map<Month, number>();
-  if (hasPeriod) {
+  // On the execution basis the spanwise grid bills nothing, so a slip in it
+  // cannot touch the bill and must not hold it provisional.
+  if (hasPeriod && basis === 'spanwise') {
     const impossible = progress
       .filter((p) => p.spanDays.reduce((a, b) => a + b, 0) > (monthDays.get(p.month) ?? 0))
       .map((p) => p.month)
@@ -157,7 +190,6 @@ export function calculate(input: CalculationInput): CalculationResult {
 
   const quarters = quartersUnderConsideration(
     schedule, contract.commencement, contract.actualCompletion);
-  const periodMonths = monthsOfPeriod(contract.commencement, contract.actualCompletion);
   const lines: EscalationLine[] = [];
   const componentTotals = new Map<ComponentKey, number>();
 

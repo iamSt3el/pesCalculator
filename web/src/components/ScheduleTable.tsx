@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api, type AdjustmentRow } from '../api.ts';
+import { api, SCHEDULE_BASIS_LABELS, type AdjustmentRow, type ScheduleBasis } from '../api.ts';
 import { useContract, useReportSave } from '../ContractLayout.tsx';
 import { useGridKeys } from '../grid.ts';
 import { formatMonth, formatQuarter, formatRupees } from '../format.ts';
@@ -16,13 +16,19 @@ function Computed({ value }: { value: number }) {
 export function ScheduleTable() {
   const { bundle, calculation, reload } = useContract();
   const [rows, setRows] = useState<AdjustmentRow[]>(bundle.adjustments);
+  const [basis, setBasis] = useState<ScheduleBasis>(bundle.contract.scheduleBasis);
 
   const saver = useDebouncedSave<AdjustmentRow[]>(async (next) => {
     await api.putPayments(bundle.contract.id, next.filter((r) => r.adjustment !== 0));
     await reload();
   });
+  const basisSaver = useDebouncedSave<ScheduleBasis>(async (next) => {
+    await api.putContract(bundle.contract.id, { scheduleBasis: next });
+    await reload();
+  });
 
   useReportSave('schedule', saver.saving, saver.error);
+  useReportSave('scheduleBasis', basisSaver.saving, basisSaver.error);
 
   const { grid, onKeyDown } = useGridKeys(calculation?.schedule.rows.length ?? 0, 1);
 
@@ -38,19 +44,36 @@ export function ScheduleTable() {
     saver.schedule(next);
   };
 
+  const chooseBasis = (next: ScheduleBasis) => {
+    setBasis(next);
+    basisSaver.schedule(next);
+  };
+
   // The engine owns the rule for what counts as drift — the schedule is allocated
   // in whole rupees, so it cannot match an amount carrying paise exactly. Render
   // its finding rather than recomputing a second, subtly different one here.
   const drifted = calculation.problems.some(
-    (p) => p.code === 'schedule_drift' || p.code === 'unbilled_days');
+    (p) => p.code === 'schedule_drift' || p.code === 'unbilled_days' || p.code === 'expenditure_drift');
   const drift = calculation.schedule.total - bundle.contract.workDoneAmount;
+  // What the rows show is what the engine billed, which is the saved basis; the
+  // selector may be a keystroke ahead of it while the save is in flight.
+  const billedFrom = calculation.schedule.basis;
 
   return (
     <section className="section">
       <div className="section-head"><h2>Schedule of payment</h2></div>
+      <label className="field basis-field no-print">
+        Select option
+        <select value={basis} onChange={(e) => chooseBasis(e.target.value as ScheduleBasis)}>
+          <option value="spanwise">{SCHEDULE_BASIS_LABELS.spanwise}</option>
+          <option value="execution">{SCHEDULE_BASIS_LABELS.execution}</option>
+        </select>
+      </label>
       <p className="subtitle">
-        Computed from the days entered on Main Data, allocated in whole rupees so the months
-        total exactly what those days earn.
+        <span className="print-only">{SCHEDULE_BASIS_LABELS[billedFrom]}. </span>
+        {billedFrom === 'execution'
+          ? 'Taken from the execution-wise expenditure entered on Main Data, month by month, exactly as entered.'
+          : 'Computed from the days entered on Main Data, allocated in whole rupees so the months total exactly what those days earn.'}
         {/* Provenance belongs on the filed bill; an instruction for whoever is
             editing it does not, and on paper it cost a line of the sheet. */}
         <span className="no-print"> Adjust any month to match the bill actually paid.</span>
@@ -61,7 +84,7 @@ export function ScheduleTable() {
           <thead>
             <tr>
               <th>Month</th>
-              <th className="r">Computed</th>
+              <th className="r">{billedFrom === 'execution' ? 'Expenditure' : 'Computed'}</th>
               <th className="r col-md">Adjustment</th>
               <th className="r">Payment</th>
             </tr>

@@ -7,14 +7,15 @@ test('runMigrations creates the schema and is idempotent', async () => {
   await pool.query('DROP SCHEMA public CASCADE; CREATE SCHEMA public;');
 
   const first = await runMigrations(pool);
-  assert.deepEqual(first, ['001_init.sql', '002_contract_owner.sql']);
+  assert.deepEqual(first,
+    ['001_init.sql', '002_contract_owner.sql', '003_execution_expenditure.sql']);
 
   const { rows } = await pool.query(
     `SELECT table_name FROM information_schema.tables
      WHERE table_schema = 'public' ORDER BY table_name`,
   );
   const tables = rows.map((r: { table_name: string }) => r.table_name);
-  for (const t of ['components', 'contracts', 'payments', 'progress', 'rates', 'schema_migrations', 'session', 'users']) {
+  for (const t of ['components', 'contracts', 'expenditure', 'payments', 'progress', 'rates', 'schema_migrations', 'session', 'users']) {
     assert.ok(tables.includes(t), `missing table ${t}`);
   }
 

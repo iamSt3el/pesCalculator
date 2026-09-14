@@ -3,24 +3,27 @@ import { pool, withTransaction } from '../db.ts';
 
 export interface ContractRecord extends ContractInput { id: number }
 export interface AdjustmentRow { month: string; adjustment: number }
+export interface ExpenditureRow { month: string; amount: number }
 
 export interface ContractBundle {
   contract: ContractRecord;
   components: ComponentConfig[];
   progress: ProgressRow[];
   adjustments: AdjustmentRow[];
+  expenditure: ExpenditureRow[];
 }
 
 const CONTRACT_COLUMNS = `
   id, agreement_no, contractor, work_name, wo_no_date, wo_amount, work_done_amount,
   bid_date::text, commencement::text, stipulated_completion::text, actual_completion::text,
-  bitumen_offset_days, already_paid`;
+  bitumen_offset_days, already_paid, schedule_basis`;
 
 interface ContractDbRow {
   id: number; agreement_no: string; contractor: string; work_name: string; wo_no_date: string;
   wo_amount: number; work_done_amount: number; bid_date: string | null; commencement: string | null;
   stipulated_completion: string | null; actual_completion: string | null;
   bitumen_offset_days: number; already_paid: number;
+  schedule_basis: ContractInput['scheduleBasis'];
 }
 
 const toRecord = (r: ContractDbRow): ContractRecord => ({
@@ -37,6 +40,7 @@ const toRecord = (r: ContractDbRow): ContractRecord => ({
   actualCompletion: r.actual_completion ?? '',
   bitumenOffsetDays: r.bitumen_offset_days,
   alreadyPaid: r.already_paid,
+  scheduleBasis: r.schedule_basis,
 });
 
 /** Spec 3.2 defaults: POL keys off the bid month, bitumen off the offset month. */
@@ -89,6 +93,10 @@ export async function listBundles(ownerId: number): Promise<OwnedBundle[]> {
     'SELECT contract_id, month::text, adjustment FROM payments WHERE contract_id = ANY($1) ORDER BY month',
     [ids],
   );
+  const expenditure = await pool.query<{ contract_id: number; month: string; amount: number }>(
+    'SELECT contract_id, month::text, amount FROM expenditure WHERE contract_id = ANY($1) ORDER BY month',
+    [ids],
+  );
 
   const group = <T extends { contract_id: number }, R>(qr: { rows: T[] }, map: (r: T) => R) => {
     const out = new Map<number, R[]>();
@@ -111,12 +119,16 @@ export async function listBundles(ownerId: number): Promise<OwnedBundle[]> {
   const byAdjustments = group(adjustments, (a) => ({
     month: a.month.slice(0, 7), adjustment: a.adjustment,
   }));
+  const byExpenditure = group(expenditure, (e) => ({
+    month: e.month.slice(0, 7), amount: e.amount,
+  }));
 
   return rows.map((r) => ({
     contract: toRecord(r),
     components: byComponents.get(r.id) ?? [],
     progress: byProgress.get(r.id) ?? [],
     adjustments: byAdjustments.get(r.id) ?? [],
+    expenditure: byExpenditure.get(r.id) ?? [],
     updatedAt: r.updated_at,
   }));
 }
@@ -171,6 +183,9 @@ export async function getContract(id: number): Promise<ContractBundle | null> {
   const adjustments = await pool.query<{ month: string; adjustment: number }>(
     'SELECT month::text, adjustment FROM payments WHERE contract_id = $1 ORDER BY month', [id],
   );
+  const expenditure = await pool.query<{ month: string; amount: number }>(
+    'SELECT month::text, amount FROM expenditure WHERE contract_id = $1 ORDER BY month', [id],
+  );
 
   return {
     contract: toRecord(rows[0]!),
@@ -183,6 +198,7 @@ export async function getContract(id: number): Promise<ContractBundle | null> {
       spanDays: [p.span1_days, p.span2_days, p.span3_days, p.span4_days] as [number, number, number, number],
     })),
     adjustments: adjustments.rows.map((a) => ({ month: a.month.slice(0, 7), adjustment: a.adjustment })),
+    expenditure: expenditure.rows.map((e) => ({ month: e.month.slice(0, 7), amount: e.amount })),
   };
 }
 
@@ -202,6 +218,7 @@ export async function updateContract(id: number, patch: Partial<ContractInput>):
     bidDate: 'bid_date', commencement: 'commencement',
     stipulatedCompletion: 'stipulated_completion', actualCompletion: 'actual_completion',
     bitumenOffsetDays: 'bitumen_offset_days', alreadyPaid: 'already_paid',
+    scheduleBasis: 'schedule_basis',
   };
   const sets: string[] = [];
   const values: unknown[] = [];
@@ -250,6 +267,18 @@ export async function replaceAdjustments(id: number, rows: AdjustmentRow[]): Pro
       await client.query(
         'INSERT INTO payments (contract_id, month, adjustment) VALUES ($1, $2::date, $3)',
         [id, `${r.month}-01`, r.adjustment],
+      );
+    }
+  });
+}
+
+export async function replaceExpenditure(id: number, rows: ExpenditureRow[]): Promise<void> {
+  await withTransaction(async (client) => {
+    await client.query('DELETE FROM expenditure WHERE contract_id = $1', [id]);
+    for (const r of rows) {
+      await client.query(
+        'INSERT INTO expenditure (contract_id, month, amount) VALUES ($1, $2::date, $3)',
+        [id, `${r.month}-01`, r.amount],
       );
     }
   });
