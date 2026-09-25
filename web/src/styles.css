@@ -547,7 +547,9 @@ label.field > input, label.field > select { color: var(--ink); font-size: 14px; 
 }
 
 .bill-head { border-bottom: 2px solid var(--rule-strong); padding-bottom: var(--s4); margin-bottom: var(--s1); }
-.bill-head h2 { font-size: 20px; }
+.bill-head h2 { font-size: 20px; text-align: center; }
+.bill-head .bill-period { display: block; margin: var(--s2) auto 0; }
+.bill-head .meta { text-align: center; }
 .bill-head .meta { margin: var(--s1) 0 var(--s5); }
 /* Fixed three columns, so the particulars land in the same place on every
    bill. An auto-fit grid reflowed them differently as the window changed. */

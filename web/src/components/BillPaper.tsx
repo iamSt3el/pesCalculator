@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { COMPONENT_KEYS, COMPONENT_LABELS, type ComponentKey } from '../api.ts';
 import { FormulaStrip } from './FormulaStrip.tsx';
 import { ProvisionalBand } from './ProvisionalBand.tsx';
@@ -26,6 +27,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export function BillPaper({ showBand = true }: { showBand?: boolean } = {}) {
   const { bundle, calculation } = useContract();
   const { contract } = bundle;
+  // Opens on what the dates say: work finished past its stipulated completion
+  // is billed after the time period.
+  const [period, setPeriod] = useState<'in' | 'after'>(
+    contract.actualCompletion > contract.stipulatedCompletion ? 'after' : 'in');
   if (!calculation) return null;
 
   const provisional = calculation.problems.length > 0;
@@ -46,6 +51,11 @@ export function BillPaper({ showBand = true }: { showBand?: boolean } = {}) {
       {showBand && <ProvisionalBand count={calculation.problems.length} />}
       <header className="bill-head">
         <h2>Price escalation under Clause-45</h2>
+        <select className="bill-period" aria-label="Time period" value={period}
+          onChange={(e) => setPeriod(e.target.value as 'in' | 'after')}>
+          <option value="in">In time period</option>
+          <option value="after">After time period</option>
+        </select>
         <p className="meta">
           Calculation for the period on which escalation is payable.
         </p>
