@@ -49,7 +49,7 @@ export function SubscriptionPanel() {
 
   return (
     <>
-      <div className="section-head"><h2>Subscription</h2></div>
+      <div className="section-head" id="subscription"><h2>Subscription</h2></div>
       <div className="panel summary">
         <div className="spread">
           <span className="rail-title">{name}</span>
@@ -118,7 +118,7 @@ export function SubscriptionPanel() {
 
       {view.charges.length > 0 && (
         <>
-          <div className="section-head"><h2>Payments</h2></div>
+          <div className="section-head" id="payments"><h2>Payments</h2></div>
           <div className="panel panel--flush">
             <table className="grid">
               <thead>

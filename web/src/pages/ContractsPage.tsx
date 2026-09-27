@@ -2,14 +2,12 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, type ContractSummary } from '../api.ts';
 import { Spinner } from '../components/Spinner.tsx';
-import { RunningHead } from '../components/RunningHead.tsx';
-import { ThemeToggle } from '../components/ThemeToggle.tsx';
 import { formatDate, formatRupees, formatWhen } from '../format.ts';
 import { contractsBand, isoDay, planState } from '../billing.ts';
 import { Band } from '../components/Band.tsx';
 import { LockIcon } from '../components/LockIcon.tsx';
 import { useEntitlement } from '../entitlement.tsx';
-import { SITE } from '../site.ts';
+import { contractStats } from '../stats.ts';
 
 const STATUS: Record<ContractSummary['status'], { pill: string; label: string }> = {
   ready: { pill: 'pill pill--ok', label: 'Ready' },
@@ -30,7 +28,22 @@ function Status({ row }: { row: ContractSummary }) {
   );
 }
 
-export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
+/** How many contracts, how many are ready to print, and what they come to. */
+function Stats({ rows }: { rows: ContractSummary[] }) {
+  const { count, ready, payable } = contractStats(rows);
+  return (
+    <div className="stat-strip">
+      <div className="stat"><span className="eyebrow eyebrow--flush">Contracts</span><span className="stat__value">{count}</span></div>
+      <div className="stat"><span className="eyebrow eyebrow--flush">Ready to print</span><span className="stat__value">{ready}</span></div>
+      <div className="stat">
+        <span className="eyebrow eyebrow--flush">Escalation payable, all contracts</span>
+        <span className={`stat__value${payable < 0 ? ' num--negative' : ''}`}>₹{formatRupees(payable, 0)}</span>
+      </div>
+    </div>
+  );
+}
+
+export function ContractsPage() {
   const navigate = useNavigate();
   const [rows, setRows] = useState<ContractSummary[] | null>(null);
   const [agreementNo, setAgreementNo] = useState('');
@@ -73,26 +86,21 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
   }
 
   return (
-    <main className="page">
-      <RunningHead identity={SITE.name} sub="Clause-45 billing" />
-      <div className="page-head">
+    <main className="app-main">
+      <div className="app-head">
         <div>
           <h1 className="title">Contracts</h1>
           <p className="subtitle">Every agreement this account has prepared</p>
         </div>
-        <div className="row">
-          {e && !e.paid && (
-            <span className="pill pill--idle">
-              Free plan · {e.contractCount} of {e.limit} contract{e.limit === 1 ? '' : 's'}
-            </span>
-          )}
-          {view?.entitlement.source === 'admin' && (
-            <Link to="/admin/subscribers" className="ghost no-print">Subscribers</Link>
-          )}
-          <ThemeToggle />
-          <Link to="/profile" className="ghost no-print">Your account</Link>
-          <button className="ghost" onClick={onSignOut}>Sign out</button>
-        </div>
+        <form onSubmit={create} className="inline-create">
+          <label className="sr-only" htmlFor="agreement-no">Agreement number</label>
+          <input id="agreement-no" value={agreementNo} onChange={(ev) => setAgreementNo(ev.target.value)}
+                 placeholder={e?.readOnly ? 'Subscribe to start new contracts' : 'Agreement number, e.g. 168 of 2023-24'}
+                 disabled={e?.readOnly ?? false} required />
+          <button type="submit" disabled={busy || !agreementNo.trim() || (e ? !e.canCreate : false)}>
+            New contract
+          </button>
+        </form>
       </div>
 
       {error && <p className="notice">{error}</p>}
@@ -124,25 +132,14 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
         </Band>
       )}
 
-      <form onSubmit={create} className="panel stack-form-tight">
-        <div className="form-bar">
-          <label className="field">
-            Agreement number
-            <input value={agreementNo} onChange={(ev) => setAgreementNo(ev.target.value)}
-                   placeholder={e?.readOnly ? 'Subscribe to start new contracts' : '168 of 2023-24'}
-                   disabled={e?.readOnly ?? false} required />
-          </label>
-          <button type="submit" disabled={busy || !agreementNo.trim() || (e ? !e.canCreate : false)}>
-            Start contract
-          </button>
-        </div>
-        {e && !e.canCreate && !e.readOnly && (
-          <Band action={<Link to="/plans" className="button">See plans</Link>}>
-            The free plan holds one contract. Subscribe for unlimited contracts — or delete the one below
-            to start a new one for free.
-          </Band>
-        )}
-      </form>
+      {e && !e.canCreate && !e.readOnly && (
+        <Band action={<Link to="/plans" className="button">See plans</Link>}>
+          The free plan holds one contract. Subscribe for unlimited contracts — or delete the one below
+          to start a new one for free.
+        </Band>
+      )}
+
+      {rows && rows.length > 0 && <Stats rows={rows} />}
 
       {rows === null ? <Spinner />
         : rows.length === 0 ? (
@@ -150,7 +147,7 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
             <div className="empty">
               <p className="empty__title">Start your first contract</p>
               <p className="empty__body">
-                Give it an agreement number above. You can fill in the particulars,
+                Give it an agreement number at the top right. You can fill in the particulars,
                 the days worked and the rates chart afterwards — the bill builds up
                 as you go, and tells you what it still needs.
               </p>

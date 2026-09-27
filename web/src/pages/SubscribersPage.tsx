@@ -1,8 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
 import { api, ApiError, type Subscriber } from '../api.ts';
 import { isoDay, PERIOD_LABEL, subscriberCategory, type SubscriberCategory } from '../billing.ts';
-import { RunningHead } from '../components/RunningHead.tsx';
 import { Spinner } from '../components/Spinner.tsx';
 import { useEntitlement } from '../entitlement.tsx';
 import { formatDate } from '../format.ts';
@@ -42,7 +40,7 @@ export function SubscribersPage() {
   useEffect(load, []);
 
   if (view && view.entitlement.source !== 'admin') {
-    return <main className="page"><p className="notice">Administrator access required.</p></main>;
+    return <main className="app-main"><p className="notice">Administrator access required.</p></main>;
   }
 
   const counts = (rows ?? []).reduce<Record<string, number>>((acc, r) => {
@@ -83,14 +81,12 @@ export function SubscribersPage() {
   }
 
   return (
-    <main className="page">
-      <RunningHead identity="Administration" sub="Subscribers" />
-      <div className="page-head">
+    <main className="app-main">
+      <div className="app-head">
         <div>
           <h1 className="title">Subscribers</h1>
           <p className="subtitle">Every account, what it pays for, and until when. Administrators are always unlimited.</p>
         </div>
-        <Link to="/" className="ghost">← Contracts</Link>
       </div>
 
       {error && <p className="notice">{error}</p>}

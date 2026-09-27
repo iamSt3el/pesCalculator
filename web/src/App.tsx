@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import { api, type SessionUser } from './api.ts';
 import { ContractLayout } from './ContractLayout.tsx';
 import { EntitlementProvider } from './entitlement.tsx';
@@ -14,7 +14,7 @@ import { BaseRatePage } from './pages/BaseRatePage.tsx';
 import { CalculationPage } from './pages/CalculationPage.tsx';
 import { PrintPage } from './pages/PrintPage.tsx';
 import { PlansPage } from './pages/PlansPage.tsx';
-import { CheckoutPage } from './pages/CheckoutPage.tsx';
+import { AppLayout } from './components/AppBar.tsx';
 import { SubscribersPage } from './pages/SubscribersPage.tsx';
 import { LandingPage } from './pages/LandingPage.tsx';
 import { ContactPage, PrivacyPage, RefundsPage, TermsPage } from './pages/PolicyPages.tsx';
@@ -26,6 +26,22 @@ const POLICY_ROUTES = [
   <Route key="refunds" path="/refunds" element={<RefundsPage />} />,
   <Route key="contact" path="/contact" element={<ContactPage />} />,
 ];
+
+/** The old two-step checkout address; choosing and paying are one page now. */
+function CheckoutRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={`/plans${search}`} replace />;
+}
+
+/**
+ * Where signing in from the landing page lands: the plan the visitor chose
+ * there, if they chose one, otherwise their contracts.
+ */
+function SignedInRedirect() {
+  const [params] = useSearchParams();
+  const plan = params.get('plan');
+  return <Navigate to={plan ? `/plans?period=${encodeURIComponent(plan)}` : '/'} replace />;
+}
 
 export function App() {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -60,14 +76,16 @@ export function App() {
     <EntitlementProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<ContractsPage onSignOut={signOut} />} />
-          <Route path="/profile" element={<ProfilePage onSignOut={signOut} />} />
-          <Route path="/plans" element={<PlansPage />} />
-          <Route path="/plans/checkout" element={<CheckoutPage />} />
-          <Route path="/admin/subscribers" element={<SubscribersPage />} />
+          <Route element={<AppLayout user={user} onSignOut={signOut} />}>
+            <Route path="/" element={<ContractsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/plans" element={<PlansPage />} />
+            <Route path="/admin/subscribers" element={<SubscribersPage />} />
+          </Route>
+          <Route path="/plans/checkout" element={<CheckoutRedirect />} />
           {POLICY_ROUTES}
           {/* Signing in from the landing page arrives here. */}
-          <Route path="/signin" element={<Navigate to="/" replace />} />
+          <Route path="/signin" element={<SignedInRedirect />} />
           <Route path="/c/:id" element={<ContractLayout onSignOut={signOut} />}>
             <Route index element={<MainDataPage />} />
             <Route path="rates" element={<RatesChartPage />} />
