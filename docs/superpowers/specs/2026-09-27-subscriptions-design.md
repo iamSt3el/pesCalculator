@@ -1,7 +1,7 @@
 # Subscriptions
 
 **Date:** 2026-09-27
-**Status:** Awaiting review
+**Status:** Approved; implemented
 **Scope:** `server/` and `web/`. The engine is untouched.
 **Screens:** the design canvas "PES Subscription Screens"
 (https://claude.ai/artifact/UQ4ropeqZ9GCnVpXpuusSW). Where this document and the
@@ -286,13 +286,15 @@ two. The user is never charged for a grant.
 - **Contracts page** — the plan pill; with `!canCreate`, Start contract disabled and
   the limit band; with `readOnly`, the ended band, the input disabled, a lock beside
   each agreement. Delete stays.
-- **Contract stages** — with `readOnly`, a "Read-only" flag in the running head, the
-  band above the stage, and the stage's content inside one `<fieldset disabled>` in
-  `ContractLayout`, which disables every control on every stage at once; the stage
-  savers are not called. Print bill keeps working.
+- **Contract stages** — with `readOnly`, a "Read-only" flag in the running head and the
+  band above the stage. The controls that write are wrapped in `<Editable>` — a
+  `<fieldset disabled>` — on Main Data (particulars, dates, components, both grids),
+  Base Rate (overrides) and the Schedule of payment (basis and adjustments). Print
+  buttons and the bill's in/after choice stay outside it and keep working. The Rates
+  Chart stage is not wrapped (§10).
 - **Your account** — the Subscription panel (the states on canvas board 8, less the cuts
-  in §9) and a Payments table from `subscription_charges`, above Details and Change
-  password.
+  in §9) and a Payments table from `subscription_charges` — date, plan, amount, Razorpay
+  payment reference; Razorpay emails the receipts — above Details and Change password.
 
 Styling stays inside the ledger system in `styles.css`: tokens only, the two rule
 weights, 2 px radius, existing `.pill` and `.notice` vocabulary. New classes: a `.band`
