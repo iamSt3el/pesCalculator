@@ -34,8 +34,11 @@ const ENDED = new Set(['halted', 'cancelled', 'completed', 'expired']);
 
 export function planState(view: BillingView): PlanState {
   const { entitlement: e, subscription: s } = view;
-  if (e.source === 'admin') return 'admin';
-  if (e.source === 'subscription' && s) {
+  // An administrator is unlimited either way, but one who subscribes still has
+  // a subscription to see and to cancel.
+  const adminCharging = e.source === 'admin' && s !== null && (s.status === 'active' || s.status === 'pending');
+  if (e.source === 'admin' && !adminCharging) return 'admin';
+  if ((e.source === 'subscription' || adminCharging) && s) {
     if (s.status === 'pending') return 'retrying';
     if (s.cancelAtCycleEnd || s.status === 'cancelled') return 'ending';
     return 'active';
@@ -43,6 +46,15 @@ export function planState(view: BillingView): PlanState {
   if (e.source === 'grant') return 'granted';
   if (s && ENDED.has(s.status)) return 'ended';
   return 'free';
+}
+
+/**
+ * Whether a payment has landed: the subscription itself is charging. Not the
+ * account's entitlement source — an administrator is unlimited regardless, and
+ * would otherwise wait on "Confirming" for ever after paying.
+ */
+export function subscriptionActive(view: BillingView): boolean {
+  return view.subscription?.status === 'active' || view.subscription?.status === 'pending';
 }
 
 export type ContractsBand = 'read_only' | 'retrying' | 'ending_soon' | null;

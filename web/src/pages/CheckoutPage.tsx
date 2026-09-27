@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
-import { api, type BillingView, type Period, type PlanPrice } from '../api.ts';
-import { formatPaise, nextRenewal, PERIOD_LABEL, PERIODS } from '../billing.ts';
+import { api, type Period, type PlanPrice } from '../api.ts';
+import { formatPaise, nextRenewal, PERIOD_LABEL, PERIODS, subscriptionActive } from '../billing.ts';
 import { RunningHead } from '../components/RunningHead.tsx';
 import { Spinner } from '../components/Spinner.tsx';
 import { useEntitlement } from '../entitlement.tsx';
@@ -14,7 +14,6 @@ const POLL_MS = 3000;
 const POLL_TRIES = 20;
 
 const isPeriod = (v: string | null): v is Period => PERIODS.includes(v as Period);
-const activated = (v: BillingView) => v.entitlement.source === 'subscription';
 
 export function CheckoutPage() {
   const [params] = useSearchParams();
@@ -35,7 +34,7 @@ export function CheckoutPage() {
     const timer = setInterval(() => {
       tries += 1;
       api.billing().then((v) => {
-        if (activated(v)) { clearInterval(timer); void refresh(); setPhase('done'); }
+        if (subscriptionActive(v)) { clearInterval(timer); void refresh(); setPhase('done'); }
       }).catch(() => {});
       if (tries >= POLL_TRIES) { clearInterval(timer); setGaveUp(true); }
     }, POLL_MS);
@@ -64,7 +63,7 @@ export function CheckoutPage() {
         handler: (result) => {
           setPhase('confirming');
           api.verifySubscription(result)
-            .then((v) => { if (activated(v)) { void refresh(); setPhase('done'); } })
+            .then((v) => { if (subscriptionActive(v)) { void refresh(); setPhase('done'); } })
             .catch(() => { /* stay on Confirming; the poll takes over */ });
         },
         modal: { ondismiss: () => setPhase((p) => (p === 'paying' ? 'failed' : p)) },

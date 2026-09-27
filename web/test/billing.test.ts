@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { BillingView, Entitlement, Subscriber } from '../src/api.ts';
 import {
-  contractsBand, formatPaise, nextRenewal, planState, subscriberCategory,
+  contractsBand, formatPaise, nextRenewal, planState, subscriberCategory, subscriptionActive,
 } from '../src/billing.ts';
 
 const NOW = new Date('2026-09-27T06:30:00Z');
@@ -61,4 +61,21 @@ test('subscriberCategory files each account under one filter', () => {
   assert.equal(subscriberCategory(s(ent({ paid: true, source: 'grant' }), null)), 'granted');
   assert.equal(subscriberCategory(s(ent(), 'halted')), 'ended');
   assert.equal(subscriberCategory(s(ent(), null)), 'free');
+});
+
+test('subscriptionActive is about the subscription, whoever the account is', () => {
+  assert.equal(subscriptionActive(view()), false);
+  assert.equal(subscriptionActive(view({ entitlement: paying, subscription: sub('active') })), true);
+  // An administrator paying — say, trying test mode — is unlimited either way;
+  // the checkout page still has to see the payment land.
+  const admin = ent({ paid: true, source: 'admin', limit: null, canCreate: true });
+  assert.equal(subscriptionActive(view({ entitlement: admin, subscription: sub('active') })), true);
+  assert.equal(subscriptionActive(view({ entitlement: admin, subscription: sub('authenticated') })), false);
+});
+
+test('an administrator who subscribes sees the subscription, not just "admin"', () => {
+  const admin = ent({ paid: true, source: 'admin', limit: null, canCreate: true });
+  assert.equal(planState(view({ entitlement: admin, subscription: sub('active') })), 'active');
+  assert.equal(planState(view({ entitlement: admin, subscription: sub('active', { cancelAtCycleEnd: true }) })), 'ending');
+  assert.equal(planState(view({ entitlement: admin, subscription: sub('halted') })), 'admin');
 });
