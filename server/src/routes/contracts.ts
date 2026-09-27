@@ -2,9 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { listContractSummaries } from '../assemble.ts';
 import { requireAuth } from '../auth/middleware.ts';
+import { entitlementFor } from '../billing/access.ts';
+import { FREE_CONTRACT_LIMIT } from '../billing/entitlement.ts';
 import { calculationRouter } from './calculation.ts';
 import {
-  contractOwnerId, createContract, deleteContract, getContract,
+  ContractLimitError, contractOwnerId, createContract, deleteContract, getContract,
   replaceAdjustments, replaceComponents, replaceExpenditure, replaceProgress, updateContract,
 } from '../repo/contracts.ts';
 
@@ -60,6 +62,13 @@ const parseId = (raw: string | undefined): number | null => {
   return Number.isInteger(n) && n > 0 ? n : null;
 };
 
+const LIMIT_MESSAGE = 'The free plan holds one contract. Subscribe for unlimited contracts.';
+const READ_ONLY_MESSAGE =
+  'This account is over its plan, so its contracts are read-only. Subscribe, or delete down to one contract, to edit again.';
+
+/** Reading and deleting are never billing's business: deleting is how you get back under the limit. */
+const ALWAYS_ALLOWED = new Set(['GET', 'HEAD', 'DELETE']);
+
 contractsRouter.get('/', async (req, res) => {
   res.json(await listContractSummaries(req.session.user!.id));
 });
@@ -67,7 +76,19 @@ contractsRouter.get('/', async (req, res) => {
 contractsRouter.post('/', async (req, res) => {
   const parsed = z.object({ agreementNo: z.string().min(1).max(200) }).safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: 'An agreement number is required' }); return; }
-  res.status(201).json(await createContract(parsed.data.agreementNo, req.session.user!.id));
+  const userId = req.session.user!.id;
+  const access = await entitlementFor(userId);
+  if (!access) { res.status(401).json({ error: 'Not signed in' }); return; }
+  try {
+    const limit = access.paid ? undefined : FREE_CONTRACT_LIMIT;
+    res.status(201).json(await createContract(parsed.data.agreementNo, userId, { limit }));
+  } catch (err) {
+    if (err instanceof ContractLimitError) {
+      res.status(402).json({ error: LIMIT_MESSAGE, code: 'limit' });
+      return;
+    }
+    throw err;
+  }
 });
 
 /**
@@ -81,6 +102,13 @@ contractsRouter.use('/:id', async (req, res, next) => {
   try {
     if (await contractOwnerId(contractId) !== req.session.user!.id) {
       res.status(404).json({ error: 'No such contract' }); return;
+    }
+    if (!ALWAYS_ALLOWED.has(req.method)) {
+      const access = await entitlementFor(req.session.user!.id);
+      if (access?.readOnly) {
+        res.status(402).json({ error: READ_ONLY_MESSAGE, code: 'read_only' });
+        return;
+      }
     }
     next();
   } catch (err) { next(err); }

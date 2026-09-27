@@ -145,9 +145,29 @@ export async function contractOwnerId(id: number): Promise<number | null> {
   return rows[0]?.user_id ?? null;
 }
 
-/** ownerId is null only for the seeder, whose rows the first account adopts. */
-export async function createContract(agreementNo: string, ownerId: number | null): Promise<ContractRecord> {
+/** Raised inside the create transaction when the account is already at its limit. */
+export class ContractLimitError extends Error {
+  constructor() { super('Contract limit reached'); }
+}
+
+/**
+ * ownerId is null only for the seeder, whose rows the first account adopts.
+ *
+ * With a limit, the owner's row is locked before counting, so two requests
+ * racing to create a second contract are serialised and the later one sees
+ * the earlier one's row.
+ */
+export async function createContract(
+  agreementNo: string, ownerId: number | null, opts: { limit?: number } = {},
+): Promise<ContractRecord> {
   return withTransaction(async (client) => {
+    if (opts.limit !== undefined && ownerId !== null) {
+      await client.query('SELECT id FROM users WHERE id = $1 FOR UPDATE', [ownerId]);
+      const { rows: counted } = await client.query<{ n: number }>(
+        'SELECT count(*)::int AS n FROM contracts WHERE user_id = $1', [ownerId],
+      );
+      if (counted[0]!.n >= opts.limit) throw new ContractLimitError();
+    }
     const { rows } = await client.query<ContractDbRow>(
       `INSERT INTO contracts (agreement_no, user_id) VALUES ($1, $2) RETURNING ${CONTRACT_COLUMNS}`,
       [agreementNo, ownerId],

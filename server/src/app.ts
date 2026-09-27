@@ -6,11 +6,18 @@ import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
 import { authRouter, usersRouter } from './auth/routes.ts';
+import { billingFromEnv, setBilling, type Billing } from './billing/state.ts';
 import { pool } from './db.ts';
 import { contractsRouter } from './routes/contracts.ts';
 import { ratesRouter } from './routes/rates.ts';
 
-export function createApp(): express.Express {
+export interface AppOptions {
+  /** Omitted: read from the environment. null: unconfigured, nobody limited. */
+  billing?: Billing | null;
+}
+
+export function createApp(options: AppOptions = {}): express.Express {
+  setBilling(options.billing !== undefined ? options.billing : billingFromEnv());
   const app = express();
   app.set('trust proxy', 1);  // Render terminates TLS in front of us
   app.use(helmet());
