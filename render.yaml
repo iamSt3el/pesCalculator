@@ -20,3 +20,16 @@ services:
       # Generated once by Render and kept; changing it signs everyone out.
       - key: SESSION_SECRET
         generateValue: true
+      # Razorpay. All six or none: with none set, nobody is limited.
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+      - key: RAZORPAY_PLAN_MONTHLY
+        sync: false
+      - key: RAZORPAY_PLAN_HALF_YEARLY
+        sync: false
+      - key: RAZORPAY_PLAN_YEARLY
+        sync: false

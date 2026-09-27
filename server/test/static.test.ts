@@ -22,3 +22,12 @@ test('a client route falls through to the app shell so deep links work', async (
   // 200 with the shell when a build exists, 404 when it does not - never a crash.
   assert.ok([200, 404].includes(res.status));
 });
+
+test('the security policy lets Razorpay Checkout load, and nothing wider', async () => {
+  const csp = (await fetch(`${base}/api/health`)).headers.get('content-security-policy') ?? '';
+  const directive = (name: string) => csp.split(';').map((d) => d.trim()).find((d) => d.startsWith(`${name} `)) ?? '';
+  assert.match(directive('script-src'), /https:\/\/checkout\.razorpay\.com/);
+  assert.match(directive('frame-src'), /https:\/\/api\.razorpay\.com/);
+  assert.match(directive('connect-src'), /https:\/\/api\.razorpay\.com/);
+  assert.doesNotMatch(directive('script-src'), /'unsafe-inline'|\*/);
+});

@@ -202,6 +202,53 @@ the clock would spend ~744 of the 750 free instance-hours.
 No pinger is a substitute for Render's paid Starter plan (~$7/month), which
 simply does not spin down.
 
+---
+
+## Subscriptions
+
+A free account keeps **one** contract. A subscription — monthly, every 6 months
+or yearly, auto-renewing through Razorpay — keeps any number. An account that is
+not paid and holds more than one contract is **read-only**: every bill still
+opens and prints, nothing is deleted, and deleting down to one contract makes
+that one editable again. Administrators are always unlimited and can grant any
+account access until a date from **Subscribers** on the contracts page.
+
+**Nothing is limited until billing is configured**, and it is configured only
+when all six `RAZORPAY_*` variables are set. Deploying the code changes nothing
+on its own.
+
+### Switching it on
+
+1. In the Razorpay dashboard create three plans: monthly (period *monthly*,
+   interval 1), 6 months (*monthly*, interval 6), yearly (*yearly*, interval 1).
+   **The prices live on these plans** — the app reads them, so changing a price
+   needs no deploy.
+2. Create a webhook to `https://pes-calculator.onrender.com/api/billing/webhook`
+   with a secret of your choosing, for the events `subscription.authenticated`,
+   `subscription.activated`, `subscription.charged`, `subscription.pending`,
+   `subscription.halted`, `subscription.cancelled`, `subscription.completed`,
+   `subscription.updated`.
+3. **Before** the next step, grant access (Subscribers) to anyone who should not
+   meet the limit on day one — from the moment billing is on, an account with two
+   or more contracts and no plan is read-only.
+4. Set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` and the
+   three `RAZORPAY_PLAN_*` ids on Render, and let it redeploy.
+
+### Trying it in test mode
+
+Put test-mode keys and test plan ids in `.env`. For webhooks to reach a local
+server, expose port 3000 with a tunnel (`cloudflared tunnel --url http://localhost:3000`)
+and point a test-mode webhook at `<tunnel>/api/billing/webhook`. Without a tunnel
+the plan still switches on — through the checkout callback, or the refresh that
+runs whenever the account's billing is loaded — so the tunnel is only needed to
+test the webhook itself.
+
+**Why three routes to the same answer.** The free Render instance sleeps outside
+the pinger's window, longer than Razorpay waits for a webhook to answer. Razorpay
+retries, but a payment made at night would otherwise wait for the retry.
+
+---
+
 ## Notes
 
 - **The free Render plan sleeps when idle**, so the first request after a

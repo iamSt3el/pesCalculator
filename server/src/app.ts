@@ -23,7 +23,18 @@ export function createApp(options: AppOptions = {}): express.Express {
   setBilling(options.billing !== undefined ? options.billing : billingFromEnv());
   const app = express();
   app.set('trust proxy', 1);  // Render terminates TLS in front of us
-  app.use(helmet());
+  // Helmet's defaults, widened only for Razorpay Checkout: its script, the
+  // frames it opens, and the APIs it calls from the page.
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        scriptSrc: ["'self'", 'https://checkout.razorpay.com'],
+        frameSrc: ["'self'", 'https://api.razorpay.com', 'https://checkout.razorpay.com'],
+        connectSrc: ["'self'", 'https://api.razorpay.com', 'https://lumberjack.razorpay.com'],
+        imgSrc: ["'self'", 'data:', 'https://*.razorpay.com'],
+      },
+    },
+  }));
   // Before express.json: the signature is over the raw bytes, and before the
   // session, which a server-to-server call has no use for.
   app.post('/api/billing/webhook', express.raw({ type: 'application/json', limit: '1mb' }), razorpayWebhook);
