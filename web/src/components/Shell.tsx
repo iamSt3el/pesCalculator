@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
-import { NavLink, useLocation, useParams } from 'react-router-dom';
+import { Link, NavLink, useLocation, useParams } from 'react-router-dom';
 import type { Calculation } from '../api.ts';
+import { planState } from '../billing.ts';
+import { useEntitlement } from '../entitlement.tsx';
 import { formatRupees } from '../format.ts';
+import { Band } from './Band.tsx';
 import { blockedStages, type StageKey } from '../problems.ts';
 import type { StageReadiness } from '../readiness.ts';
 import { ProblemList } from './ProblemList.tsx';
@@ -63,6 +66,9 @@ export function Shell({
   const { id } = useParams();
   const { pathname } = useLocation();
   const blocked = blockedStages(calculation?.problems ?? []);
+  const { view } = useEntitlement();
+  const readOnly = view?.entitlement.readOnly ?? false;
+  const ended = view ? planState(view) === 'ended' : false;
 
   /**
    * Every working stage prints through the same furniture as the filed set, so
@@ -126,7 +132,15 @@ export function Shell({
           error={error}
           payable={calculation ? `₹${formatRupees(calculation.payable)}` : null}
           problemCount={calculation?.problems.length ?? 0}
+          flag={readOnly ? 'Read-only' : undefined}
         />
+        {readOnly && (
+          <Band lock action={<Link to="/plans" className="button">{ended ? 'Renew to edit' : 'See plans'}</Link>}>
+            This contract is read-only because {ended
+              ? 'the plan on this account has ended'
+              : 'the free plan keeps only one contract editable'}. Every figure is kept, and the bill still prints.
+          </Band>
+        )}
         {framed ? (
           <SheetFurniture
             stage last

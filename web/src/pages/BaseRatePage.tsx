@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api, type ComponentConfig, type ComponentKey } from '../api.ts';
 import { BaseRateSummary } from '../components/BaseRateSummary.tsx';
+import { Editable } from '../components/Editable.tsx';
 import { ScheduleTable } from '../components/ScheduleTable.tsx';
 import { PrintButton } from '../components/PrintButton.tsx';
 import { useContract, useReportSave } from '../ContractLayout.tsx';
@@ -33,7 +34,9 @@ export function BaseRatePage() {
         </div>
       </div>
 
-      <BaseRateSummary rows={rows} onOverride={setOverride} />
+      <Editable>
+        <BaseRateSummary rows={rows} onOverride={setOverride} />
+      </Editable>
 
       <ScheduleTable />
     </>

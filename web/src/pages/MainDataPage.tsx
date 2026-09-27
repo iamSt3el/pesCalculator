@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { api, type Contract } from '../api.ts';
 import { ComponentTable } from '../components/ComponentTable.tsx';
+import { Editable } from '../components/Editable.tsx';
 import { ExecutionGrid } from '../components/ExecutionGrid.tsx';
 import { SpanwiseGrid } from '../components/SpanwiseGrid.tsx';
 import { PrintButton } from '../components/PrintButton.tsx';
@@ -95,41 +96,43 @@ export function MainDataPage() {
         The particulars of the agreement. Everything downstream is derived from these.
       </p>
 
-      <section className="panel">
-        <p className="eyebrow">Summary of agreement and work</p>
-        <div className="grid-fields">
-          {text('agreementNo', 'Agreement no.')}
-          {text('contractor', 'Name of contractor')}
-          {text('workName', 'Name of work', true)}
-          {text('woNoDate', 'Work order no. and date')}
-          {number('woAmount', 'Work order amount', { money: true })}
-          {number('workDoneAmount', 'Work done amount', { money: true })}
-        </div>
-      </section>
+      <Editable>
+        <section className="panel">
+          <p className="eyebrow">Summary of agreement and work</p>
+          <div className="grid-fields">
+            {text('agreementNo', 'Agreement no.')}
+            {text('contractor', 'Name of contractor')}
+            {text('workName', 'Name of work', true)}
+            {text('woNoDate', 'Work order no. and date')}
+            {number('woAmount', 'Work order amount', { money: true })}
+            {number('workDoneAmount', 'Work done amount', { money: true })}
+          </div>
+        </section>
 
-      <section className="panel stack-md">
-        <p className="eyebrow">Dates</p>
-        <div className="grid-fields">
-          {date('bidDate', 'Last date of bid submission')}
-          {date('commencement', 'Date of commencement')}
-          {date('stipulatedCompletion', 'Stipulated date of completion')}
-          {date('actualCompletion', 'Actual date of completion')}
-          {number('bitumenOffsetDays', 'Bitumen base offset (days before bid)')}
-          {number('alreadyPaid', 'Escalation already paid', { money: true })}
-        </div>
-        {calculation && (
-          <p className="hint stack-sm flush-bottom">
-            Work period <strong>{calculation.spans.totalDays} days</strong>, in four spans ending{' '}
-            {calculation.spans.endDates.map(formatDate).join(', ')}. Base quarter{' '}
-            <strong>{calculation.baseQuarter}</strong>, from the bid date.
-          </p>
-        )}
-      </section>
+        <section className="panel stack-md">
+          <p className="eyebrow">Dates</p>
+          <div className="grid-fields">
+            {date('bidDate', 'Last date of bid submission')}
+            {date('commencement', 'Date of commencement')}
+            {date('stipulatedCompletion', 'Stipulated date of completion')}
+            {date('actualCompletion', 'Actual date of completion')}
+            {number('bitumenOffsetDays', 'Bitumen base offset (days before bid)')}
+            {number('alreadyPaid', 'Escalation already paid', { money: true })}
+          </div>
+          {calculation && (
+            <p className="hint stack-sm flush-bottom">
+              Work period <strong>{calculation.spans.totalDays} days</strong>, in four spans ending{' '}
+              {calculation.spans.endDates.map(formatDate).join(', ')}. Base quarter{' '}
+              <strong>{calculation.baseQuarter}</strong>, from the bid date.
+            </p>
+          )}
+        </section>
 
 
-      <ComponentTable />
-      <SpanwiseGrid />
-      <ExecutionGrid />
+        <ComponentTable />
+        <SpanwiseGrid />
+        <ExecutionGrid />
+      </Editable>
     </>
   );
 }

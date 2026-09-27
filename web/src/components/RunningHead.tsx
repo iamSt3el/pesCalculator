@@ -8,10 +8,12 @@
  * whether or not there is anything to say.
  */
 export function RunningHead({
-  identity, sub, saving, error, payable, problemCount,
+  identity, sub, flag, saving, error, payable, problemCount,
 }: {
   identity: string;
   sub?: string;
+  /** A word about the contract's state, carried beside its name: 'Read-only'. */
+  flag?: string;
   saving?: boolean;
   error?: string | null;
   payable?: string | null;
@@ -23,6 +25,7 @@ export function RunningHead({
         <span className="running-head__name">{identity}</span>
         {sub && <span className="running-head__sub">{sub}</span>}
       </div>
+      {flag && <span className="running-head__flag running-head__flag--inline">{flag}</span>}
 
       {/* Carried here only on a narrow screen, where the rail is out of sight. */}
       {payable && (
