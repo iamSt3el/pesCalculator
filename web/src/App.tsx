@@ -14,6 +14,7 @@ import { BaseRatePage } from './pages/BaseRatePage.tsx';
 import { CalculationPage } from './pages/CalculationPage.tsx';
 import { PrintPage } from './pages/PrintPage.tsx';
 import { PlansPage } from './pages/PlansPage.tsx';
+import { CheckoutPage } from './pages/CheckoutPage.tsx';
 
 export function App() {
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -39,6 +40,7 @@ export function App() {
           <Route path="/" element={<ContractsPage onSignOut={signOut} />} />
           <Route path="/profile" element={<ProfilePage onSignOut={signOut} />} />
           <Route path="/plans" element={<PlansPage />} />
+          <Route path="/plans/checkout" element={<CheckoutPage />} />
           <Route path="/c/:id" element={<ContractLayout onSignOut={signOut} />}>
             <Route index element={<MainDataPage />} />
             <Route path="rates" element={<RatesChartPage />} />
