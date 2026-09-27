@@ -1,9 +1,24 @@
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  /** The server's machine-readable reason, when it gives one: 'limit', 'read_only', 'subscribed'. */
+  code?: string;
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
+}
+
+/**
+ * A 402 means the account's plan no longer covers what was just attempted —
+ * typically a plan that ran out while the page was open. Whoever holds the
+ * entitlement listens here and refetches, so the page turns read-only instead
+ * of showing a save error forever.
+ */
+const staleListeners = new Set<() => void>();
+export function onEntitlementStale(fn: () => void): () => void {
+  staleListeners.add(fn);
+  return () => { staleListeners.delete(fn); };
 }
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -15,8 +30,13 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
   if (res.status === 204) return undefined as T;
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const err = (body as { error?: unknown }).error;
-    throw new ApiError(res.status, typeof err === 'string' ? err : res.statusText);
+    if (res.status === 402) staleListeners.forEach((fn) => fn());
+    const { error, code } = body as { error?: unknown; code?: unknown };
+    throw new ApiError(
+      res.status,
+      typeof error === 'string' ? error : res.statusText,
+      typeof code === 'string' ? code : undefined,
+    );
   }
   return body as T;
 }
@@ -49,6 +69,18 @@ export const api = {
   putPayments: (id: number, rows: AdjustmentRow[]) => send<ContractBundle>(`/api/contracts/${id}/payments`, 'PUT', rows),
   putExpenditure: (id: number, rows: ExpenditureRow[]) => send<ContractBundle>(`/api/contracts/${id}/expenditure`, 'PUT', rows),
   getCalculation: (id: number) => call<Calculation>(`/api/contracts/${id}/calculation`),
+
+  billing: () => call<BillingView>('/api/billing'),
+  plans: () => call<PlanPrice[]>('/api/billing/plans'),
+  subscribe: (period: Period) => send<StartedCheckout>('/api/billing/subscriptions', 'POST', { period }),
+  verifySubscription: (result: CheckoutResult) =>
+    send<BillingView>('/api/billing/subscriptions/verify', 'POST', result),
+  cancelSubscription: () => call<BillingView>('/api/billing/subscription/cancel', { method: 'POST' }),
+
+  subscribers: () => call<Subscriber[]>('/api/admin/subscribers'),
+  grant: (userId: number, until: string, note: string) =>
+    send<{ id: number }>(`/api/admin/users/${userId}/grants`, 'POST', { until, note }),
+  revokeGrant: (id: number) => call<void>(`/api/admin/grants/${id}`, { method: 'DELETE' }),
 };
 
 /* ---- wire types ---------------------------------------------------------- */
@@ -168,4 +200,53 @@ export interface Calculation {
   alreadyPaid: number;
   payable: number;
   problems: Problem[];
+}
+
+export type Period = 'monthly' | 'half_yearly' | 'yearly';
+
+export interface Entitlement {
+  paid: boolean;
+  source: 'admin' | 'subscription' | 'grant' | 'free';
+  paidUntil: string | null;
+  contractCount: number;
+  limit: number | null;
+  readOnly: boolean;
+  canCreate: boolean;
+}
+
+export interface SubscriptionSummary {
+  period: Period;
+  status: string;
+  currentEnd: string | null;
+  cancelAtCycleEnd: boolean;
+}
+
+export interface BillingView {
+  /** False until the Razorpay keys are set; then nobody is limited. */
+  configured: boolean;
+  keyId: string | null;
+  entitlement: Entitlement;
+  subscription: SubscriptionSummary | null;
+  grant: { until: string } | null;
+  charges: Array<{ paymentId: string; amountPaise: number; paidAt: string; period: Period }>;
+}
+
+export interface PlanPrice { period: Period; amountPaise: number; currency: string }
+export interface StartedCheckout { subscriptionId: string; keyId: string; email: string }
+
+/** Exactly what Razorpay Checkout hands its success handler. */
+export interface CheckoutResult {
+  razorpay_payment_id: string;
+  razorpay_subscription_id: string;
+  razorpay_signature: string;
+}
+
+export interface Subscriber {
+  id: number;
+  email: string;
+  role: 'admin' | 'user';
+  createdAt: string;
+  entitlement: Entitlement;
+  subscription: (SubscriptionSummary & { razorpayId: string }) | null;
+  grant: { id: number; until: string; note: string } | null;
 }
