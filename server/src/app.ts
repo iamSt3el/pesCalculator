@@ -9,6 +9,7 @@ import { authRouter, usersRouter } from './auth/routes.ts';
 import { billingFromEnv, setBilling, type Billing } from './billing/state.ts';
 import { pool } from './db.ts';
 import { billingRouter } from './routes/billing.ts';
+import { razorpayWebhook } from './routes/webhook.ts';
 import { contractsRouter } from './routes/contracts.ts';
 import { ratesRouter } from './routes/rates.ts';
 
@@ -22,6 +23,9 @@ export function createApp(options: AppOptions = {}): express.Express {
   const app = express();
   app.set('trust proxy', 1);  // Render terminates TLS in front of us
   app.use(helmet());
+  // Before express.json: the signature is over the raw bytes, and before the
+  // session, which a server-to-server call has no use for.
+  app.post('/api/billing/webhook', express.raw({ type: 'application/json', limit: '1mb' }), razorpayWebhook);
   app.use(express.json({ limit: '2mb' }));
 
   const PgStore = connectPgSimple(session);
