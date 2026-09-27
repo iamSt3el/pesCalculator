@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { api, type SessionUser } from './api.ts';
 import { ContractLayout } from './ContractLayout.tsx';
+import { EntitlementProvider } from './entitlement.tsx';
 import { Spinner } from './components/Spinner.tsx';
 import { LoginPage } from './pages/LoginPage.tsx';
 import { ContractsPage } from './pages/ContractsPage.tsx';
@@ -31,20 +32,22 @@ export function App() {
   if (!user) return <LoginPage onSignedIn={refresh} />;
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<ContractsPage onSignOut={signOut} />} />
-        <Route path="/profile" element={<ProfilePage onSignOut={signOut} />} />
-        <Route path="/c/:id" element={<ContractLayout onSignOut={signOut} />}>
-          <Route index element={<MainDataPage />} />
-          <Route path="rates" element={<RatesChartPage />} />
-          <Route path="index-average" element={<IndexAveragePage />} />
-          <Route path="base-rate" element={<BaseRatePage />} />
-          <Route path="calculation" element={<CalculationPage />} />
-          <Route path="print" element={<PrintPage />} />
-        </Route>
-        <Route path="*" element={<main className="page page--narrow"><p>Page not found. <a href="/">Back to contracts</a></p></main>} />
-      </Routes>
-    </BrowserRouter>
+    <EntitlementProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<ContractsPage onSignOut={signOut} />} />
+          <Route path="/profile" element={<ProfilePage onSignOut={signOut} />} />
+          <Route path="/c/:id" element={<ContractLayout onSignOut={signOut} />}>
+            <Route index element={<MainDataPage />} />
+            <Route path="rates" element={<RatesChartPage />} />
+            <Route path="index-average" element={<IndexAveragePage />} />
+            <Route path="base-rate" element={<BaseRatePage />} />
+            <Route path="calculation" element={<CalculationPage />} />
+            <Route path="print" element={<PrintPage />} />
+          </Route>
+          <Route path="*" element={<main className="page page--narrow"><p>Page not found. <a href="/">Back to contracts</a></p></main>} />
+        </Routes>
+      </BrowserRouter>
+    </EntitlementProvider>
   );
 }
