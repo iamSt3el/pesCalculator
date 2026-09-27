@@ -172,6 +172,12 @@ test('with billing unconfigured the billing routes say so', async () => {
   }
 });
 
+test('the prices are public: the landing page shows them to visitors', async () => {
+  const res = await fetch(`${app.base}/api/billing/plans`);
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).length, 3);
+});
+
 test('billing needs a session', async () => {
   assert.equal((await fetch(`${app.base}/api/billing`)).status, 401);
 });

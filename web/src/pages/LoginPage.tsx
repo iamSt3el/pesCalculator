@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api.ts';
+import { SiteFooter } from '../components/SiteFooter.tsx';
 
 export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
   const [email, setEmail] = useState('');
@@ -25,7 +27,8 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
 
   return (
     <main className="page page--narrow">
-      <h1 className="title">Price Escalation</h1>
+      <Link to="/" className="rail-back">← About and pricing</Link>
+      <h1 className="title stack-sm">Price Escalation</h1>
       <p className="subtitle">Clause-45 billing for PWD road contracts</p>
 
       <form onSubmit={submit} className="panel stack-form">
@@ -41,6 +44,12 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
           {creating && <span className="hint">At least 12 characters.</span>}
         </label>
         {error && <p className="notice">{error}</p>}
+        {creating && (
+          <p className="hint flush">
+            By creating an account you agree to the <Link to="/terms">terms</Link> and
+            the <Link to="/privacy">privacy policy</Link>.
+          </p>
+        )}
         <button type="submit" disabled={busy}>
           {busy ? 'Working…' : creating ? 'Create account and sign in' : 'Sign in'}
         </button>
@@ -52,6 +61,7 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
           {creating ? 'Sign in instead' : 'Create an account'}
         </a>
       </p>
+      <SiteFooter />
     </main>
   );
 }

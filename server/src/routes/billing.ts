@@ -27,7 +27,6 @@ export interface BillingView {
 const BLOCKING = new Set(['active', 'pending', 'authenticated']);
 
 export const billingRouter: Router = Router();
-billingRouter.use(requireAuth);
 
 function need(res: Response): Billing | null {
   const billing = getBilling();
@@ -63,19 +62,17 @@ export async function viewFor(userId: number): Promise<BillingView | null> {
   };
 }
 
-billingRouter.get('/', async (req, res) => {
-  const view = await viewFor(req.session.user!.id);
-  if (!view) { res.status(401).json({ error: 'Not signed in' }); return; }
-  res.json(view);
-});
-
 const PLAN_CACHE_MS = 60 * 60_000;
 let planCache: { at: number; plans: Array<{ period: Period; amountPaise: number; currency: string }> } | null = null;
 
 /** Tests only. */
 export function forgetPlanCache(): void { planCache = null; }
 
-/** Prices live on the Razorpay plans, so changing one needs no deploy. */
+/**
+ * Prices live on the Razorpay plans, so changing one needs no deploy. Public,
+ * and so mounted before the session check: the landing page shows them to
+ * visitors, and Razorpay's review wants pricing visible without an account.
+ */
 billingRouter.get('/plans', async (_req, res) => {
   const billing = need(res);
   if (!billing) return;
@@ -87,6 +84,15 @@ billingRouter.get('/plans', async (_req, res) => {
     planCache = { at: Date.now(), plans };
   }
   res.json(planCache.plans);
+});
+
+// Everything below is the signed-in account's own billing.
+billingRouter.use(requireAuth);
+
+billingRouter.get('/', async (req, res) => {
+  const view = await viewFor(req.session.user!.id);
+  if (!view) { res.status(401).json({ error: 'Not signed in' }); return; }
+  res.json(view);
 });
 
 billingRouter.post('/subscriptions', async (req, res) => {

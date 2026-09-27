@@ -847,6 +847,18 @@ button.filter {
 button.filter:hover { filter: none; border-color: var(--ink-faint); }
 button.filter[aria-pressed='true'] { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 
+/* ---- public pages ------------------------------------------------------- */
+/* Policy text: a readable measure, serif heads as the stages have. */
+.prose { max-width: 68ch; margin-top: var(--s5); font-size: var(--t-body); }
+.prose h2 { font-family: var(--serif); font-size: var(--t-h2); font-weight: 600; margin: var(--s6) 0 var(--s2); }
+.prose p, .prose ul { margin: 0 0 var(--s3); }
+.prose li { margin-bottom: var(--s2); }
+.site-foot {
+  display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--s3);
+  margin-top: var(--s8); padding-top: var(--s3); border-top: 1px solid var(--rule);
+  font-size: var(--t-small); color: var(--ink-muted);
+}
+
 /* ---- responsive ---------------------------------------------------------- */
 @media (max-width: 820px) {
   .plans { grid-template-columns: 1fr; }

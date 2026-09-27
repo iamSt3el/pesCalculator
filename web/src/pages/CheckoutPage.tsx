@@ -178,7 +178,8 @@ export function CheckoutPage() {
           </div>
           <p className="hint stack-sm">
             Cancel auto-renew at any time from Your account. You keep unlimited contracts until the end of
-            the period you have paid for.
+            the period you have paid for. By paying you agree to the <Link to="/terms">terms</Link> and
+            the <Link to="/refunds">refund and cancellation policy</Link>.
           </p>
         </>
       )}
