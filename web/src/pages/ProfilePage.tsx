@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, ApiError, type Profile } from '../api.ts';
 import { validatePasswordChange, MIN_PASSWORD } from '../password.ts';
 import { RunningHead } from '../components/RunningHead.tsx';
+import { SubscriptionPanel } from '../components/SubscriptionPanel.tsx';
 import { Spinner } from '../components/Spinner.tsx';
 
 const ROLE_LABEL: Record<Profile['role'], string> = {
@@ -65,6 +66,8 @@ export function ProfilePage({ onSignOut }: { onSignOut: () => void }) {
       <Link to="/" className="rail-back">← All contracts</Link>
 
       {loadError && <p className="notice">{loadError}</p>}
+
+      <SubscriptionPanel />
 
       <div className="section-head"><h2>Details</h2></div>
       {profile === null && !loadError ? <Spinner /> : profile && (
