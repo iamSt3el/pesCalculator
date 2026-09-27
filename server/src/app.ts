@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import { authRouter, usersRouter } from './auth/routes.ts';
 import { billingFromEnv, setBilling, type Billing } from './billing/state.ts';
 import { pool } from './db.ts';
+import { billingRouter } from './routes/billing.ts';
 import { contractsRouter } from './routes/contracts.ts';
 import { ratesRouter } from './routes/rates.ts';
 
@@ -49,6 +50,7 @@ export function createApp(options: AppOptions = {}): express.Express {
 
   app.use('/api/rates', ratesRouter);
   app.use('/api/contracts', contractsRouter);
+  app.use('/api/billing', billingRouter);
 
   // An unmatched /api path is a client error, not a missing page.
   app.use('/api', (_req, res) => { res.status(404).json({ error: 'No such endpoint' }); });
