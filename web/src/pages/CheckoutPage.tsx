@@ -7,6 +7,7 @@ import { Spinner } from '../components/Spinner.tsx';
 import { useEntitlement } from '../entitlement.tsx';
 import { formatDate } from '../format.ts';
 import { loadRazorpay } from '../razorpay.ts';
+import { SITE } from '../site.ts';
 
 type Phase = 'confirm' | 'paying' | 'confirming' | 'done' | 'failed';
 
@@ -56,7 +57,7 @@ export function CheckoutPage() {
       const checkout = new Razorpay({
         key: started.keyId,
         subscription_id: started.subscriptionId,
-        name: 'Price Escalation',
+        name: SITE.name,
         description: `Unlimited contracts — ${PERIOD_LABEL[period].toLowerCase()}`,
         prefill: { email: started.email },
         theme: { color: accent },

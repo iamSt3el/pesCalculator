@@ -4,7 +4,7 @@
  * only honest once every bracketed value is replaced with the real one.
  */
 export const SITE = {
-  name: 'Price Escalation',
+  name: 'Ledgr',
   operator: '[Your full name or registered business name]',
   email: '[support email address]',
   phone: '[phone number]',

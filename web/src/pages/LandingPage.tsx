@@ -4,6 +4,7 @@ import { api, type PlanPrice } from '../api.ts';
 import { formatPaise, PERIOD_LABEL, PERIOD_PER, PERIODS } from '../billing.ts';
 import { SiteFooter } from '../components/SiteFooter.tsx';
 import { ThemeToggle } from '../components/ThemeToggle.tsx';
+import { SITE } from '../site.ts';
 
 /**
  * What a visitor sees before signing in: what the app does, what it costs, and
@@ -17,7 +18,7 @@ export function LandingPage() {
   return (
     <main className="page page--medium">
       <div className="page-head">
-        <span className="running-head__name">Price Escalation</span>
+        <span className="running-head__name">{SITE.name}</span>
         <div className="row">
           <ThemeToggle />
           <Link to="/signin" className="ghost">Sign in</Link>

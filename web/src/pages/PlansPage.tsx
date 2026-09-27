@@ -8,6 +8,7 @@ import { RunningHead } from '../components/RunningHead.tsx';
 import { Spinner } from '../components/Spinner.tsx';
 import { useEntitlement } from '../entitlement.tsx';
 import { formatDate } from '../format.ts';
+import { SITE } from '../site.ts';
 
 /** A plan that is running blocks a second one: Razorpay would take two mandates. */
 const RUNNING = new Set(['active', 'retrying', 'ending']);
@@ -27,7 +28,7 @@ export function PlansPage() {
 
   return (
     <main className="page">
-      <RunningHead identity="Price Escalation" sub="Choose a plan" />
+      <RunningHead identity={SITE.name} sub="Choose a plan" />
       <Link to="/" className="rail-back">← All contracts</Link>
       <div className="page-head stack-sm">
         <div>

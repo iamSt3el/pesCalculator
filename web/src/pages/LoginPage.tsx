@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { api, ApiError } from '../api.ts';
 import { SiteFooter } from '../components/SiteFooter.tsx';
+import { SITE } from '../site.ts';
 
 export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
   const [email, setEmail] = useState('');
@@ -28,7 +29,7 @@ export function LoginPage({ onSignedIn }: { onSignedIn: () => void }) {
   return (
     <main className="page page--narrow">
       <Link to="/" className="rail-back">← About and pricing</Link>
-      <h1 className="title stack-sm">Price Escalation</h1>
+      <h1 className="title stack-sm">{SITE.name}</h1>
       <p className="subtitle">Clause-45 billing for PWD road contracts</p>
 
       <form onSubmit={submit} className="panel stack-form">

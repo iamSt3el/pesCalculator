@@ -9,6 +9,7 @@ import { contractsBand, isoDay, planState } from '../billing.ts';
 import { Band } from '../components/Band.tsx';
 import { LockIcon } from '../components/LockIcon.tsx';
 import { useEntitlement } from '../entitlement.tsx';
+import { SITE } from '../site.ts';
 
 const STATUS: Record<ContractSummary['status'], { pill: string; label: string }> = {
   ready: { pill: 'pill pill--ok', label: 'Ready' },
@@ -73,7 +74,7 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
 
   return (
     <main className="page">
-      <RunningHead identity="Price Escalation" sub="Clause-45 billing" />
+      <RunningHead identity={SITE.name} sub="Clause-45 billing" />
       <div className="page-head">
         <div>
           <h1 className="title">Contracts</h1>
