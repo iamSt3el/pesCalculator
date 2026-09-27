@@ -4,7 +4,11 @@ import { api, type ContractSummary } from '../api.ts';
 import { Spinner } from '../components/Spinner.tsx';
 import { RunningHead } from '../components/RunningHead.tsx';
 import { ThemeToggle } from '../components/ThemeToggle.tsx';
-import { formatRupees, formatWhen } from '../format.ts';
+import { formatDate, formatRupees, formatWhen } from '../format.ts';
+import { contractsBand, isoDay, planState } from '../billing.ts';
+import { Band } from '../components/Band.tsx';
+import { LockIcon } from '../components/LockIcon.tsx';
+import { useEntitlement } from '../entitlement.tsx';
 
 const STATUS: Record<ContractSummary['status'], { pill: string; label: string }> = {
   ready: { pill: 'pill pill--ok', label: 'Ready' },
@@ -33,11 +37,20 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
   const [confirming, setConfirming] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = () => { api.listContracts().then(setRows).catch((e: Error) => setError(e.message)); };
+  const { view, refresh } = useEntitlement();
+  const e = view?.configured ? view.entitlement : null;
+  const band = view ? contractsBand(view, new Date()) : null;
+  const ended = view ? planState(view) === 'ended' : false;
+
+  // Creating and deleting change the contract count, so the plan is re-read too.
+  const load = () => {
+    api.listContracts().then(setRows).catch((err: Error) => setError(err.message));
+    void refresh();
+  };
   useEffect(load, []);
 
-  async function create(e: FormEvent) {
-    e.preventDefault();
+  async function create(ev: FormEvent) {
+    ev.preventDefault();
     setBusy(true);
     try {
       const { id } = await api.createContract(agreementNo.trim());
@@ -67,6 +80,14 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
           <p className="subtitle">Every agreement this account has prepared</p>
         </div>
         <div className="row">
+          {e && !e.paid && (
+            <span className="pill pill--idle">
+              Free plan · {e.contractCount} of {e.limit} contract{e.limit === 1 ? '' : 's'}
+            </span>
+          )}
+          {view?.entitlement.source === 'admin' && (
+            <Link to="/admin/subscribers" className="ghost no-print">Subscribers</Link>
+          )}
           <ThemeToggle />
           <Link to="/profile" className="ghost no-print">Your account</Link>
           <button className="ghost" onClick={onSignOut}>Sign out</button>
@@ -75,15 +96,51 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
 
       {error && <p className="notice">{error}</p>}
 
-      <form onSubmit={create} className="panel form-bar">
-        <label className="field">
-          Agreement number
-          <input value={agreementNo} onChange={(e) => setAgreementNo(e.target.value)}
-                 placeholder="168 of 2023-24" required />
-        </label>
-        <button type="submit" disabled={busy || !agreementNo.trim()}>
-          Start contract
-        </button>
+      {band === 'read_only' && e && (
+        <Band lock action={<Link to="/plans" className="button">{ended ? 'Renew' : 'See plans'}</Link>}>
+          <strong>
+            {ended ? 'Your plan has ended.' : 'The free plan keeps one contract editable.'}{' '}
+            All {e.contractCount} contracts are read-only — nothing has been deleted.
+          </strong>
+          <span className="band__detail">
+            You can still open and print every bill. Subscribe to edit them again, or delete down to
+            one contract to keep editing it on the free plan.
+          </span>
+        </Band>
+      )}
+      {band === 'retrying' && (
+        <Band action={<Link to="/profile" className="ghost">Your account</Link>}>
+          Razorpay could not collect your last payment and will retry on its own. You keep unlimited
+          contracts meanwhile; if every retry fails, the plan ends.
+        </Band>
+      )}
+      {band === 'ending_soon' && view?.subscription?.currentEnd && (
+        <Band tone="neutral">
+          Your plan ends on {formatDate(isoDay(view.subscription.currentEnd))}.
+          {e && e.contractCount > 1
+            ? ` After that your ${e.contractCount} contracts can only be viewed and printed until you subscribe again.`
+            : ' After that you are back on the free plan.'}
+        </Band>
+      )}
+
+      <form onSubmit={create} className="panel stack-form-tight">
+        <div className="form-bar">
+          <label className="field">
+            Agreement number
+            <input value={agreementNo} onChange={(ev) => setAgreementNo(ev.target.value)}
+                   placeholder={e?.readOnly ? 'Subscribe to start new contracts' : '168 of 2023-24'}
+                   disabled={e?.readOnly ?? false} required />
+          </label>
+          <button type="submit" disabled={busy || !agreementNo.trim() || (e ? !e.canCreate : false)}>
+            Start contract
+          </button>
+        </div>
+        {e && !e.canCreate && !e.readOnly && (
+          <Band action={<Link to="/plans" className="button">See plans</Link>}>
+            The free plan holds one contract. Subscribe for unlimited contracts — or delete the one below
+            to start a new one for free.
+          </Band>
+        )}
       </form>
 
       {rows === null ? <Spinner />
@@ -115,6 +172,7 @@ export function ContractsPage({ onSignOut }: { onSignOut: () => void }) {
                 {rows.map((r) => (
                   <tr key={r.id}>
                     <td>
+                      {e?.readOnly && <LockIcon label="Read-only" />}
                       <Link to={`/c/${r.id}`} className="cell-link">{r.agreementNo}</Link>
                       {r.contractor && <span className="cell-sub">{r.contractor}</span>}
                     </td>

@@ -288,6 +288,9 @@ a { color: var(--accent); text-underline-offset: 2px; }
 .hint--spaced { margin-top: var(--s5); }
 .form-bar { display: flex; gap: var(--s4); align-items: flex-end; flex-wrap: wrap; margin-bottom: var(--s4); }
 .form-bar .field { flex: 1; min-width: 220px; }
+.stack-form-tight { display: grid; gap: var(--s3); margin-bottom: var(--s4); }
+.stack-form-tight .form-bar { margin-bottom: 0; }
+.stack-form-tight .band { margin-bottom: 0; }
 .cell-link { font-weight: 500; }
 td.work { max-width: 320px; }
 td.actions { text-align: right; }
