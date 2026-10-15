@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { api, type ProgressRow } from '../api.ts';
+import { api, periodEnd, periodEndName, type ProgressRow } from '../api.ts';
 import { useContract, useReportSave } from '../ContractLayout.tsx';
 import { useGridKeys } from '../grid.ts';
 import { formatDate, formatMonth, formatRupees } from '../format.ts';
 import { useDebouncedSave, useSettle } from '../hooks.ts';
 
-/** Every month from commencement to actual completion, inclusive. */
+/** Every month from commencement to the chosen completion date, inclusive. */
 function monthsBetween(from: string, to: string): string[] {
   if (!from || !to || to < from) return [];
   const out: string[] = [];
@@ -38,7 +38,7 @@ export function SpanwiseGrid() {
 
   useReportSave('progress', saver.saving, saver.error);
 
-  const months = monthsBetween(contract.commencement, contract.actualCompletion);
+  const months = monthsBetween(contract.commencement, periodEnd(contract));
   const { grid, onKeyDown } = useGridKeys(months.length, 4);
   const spans = calculation?.spans;
 
@@ -81,7 +81,7 @@ export function SpanwiseGrid() {
         <div className="section-head"><h2>Work done, month by month</h2></div>
         <div className="panel">
           <p className="flush">
-            Set the date of commencement and the actual date of completion above, and the months appear here.
+            Set the date of commencement and the {periodEndName(contract)} above, and the months appear here.
           </p>
         </div>
       </section>

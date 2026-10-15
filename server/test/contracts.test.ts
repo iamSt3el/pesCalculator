@@ -115,11 +115,14 @@ test('replaceAdjustments stores only the operator adjustment', async () => {
   ]);
 });
 
-test('a new contract bills span wise, and the basis can be switched', async () => {
+test('a new contract bills span wise on the actual period, and both bases can be switched', async () => {
   const c = await createContract('basis check', owner);
   assert.equal(c.scheduleBasis, 'spanwise');
   await updateContract(c.id, { scheduleBasis: 'execution' });
   assert.equal((await getContract(c.id))!.contract.scheduleBasis, 'execution');
+  assert.equal(c.spanBasis, 'actual');
+  await updateContract(c.id, { spanBasis: 'stipulated' });
+  assert.equal((await getContract(c.id))!.contract.spanBasis, 'stipulated');
 });
 
 test('replaceExpenditure stores each month to the paise and replaces the whole set', async () => {

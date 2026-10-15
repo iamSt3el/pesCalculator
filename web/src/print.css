@@ -234,7 +234,8 @@
    * control steps aside.
    */
   .field:has(> .echo) > input,
-  .field:has(> .field__printed) > input { display: none; }
+  .field:has(> .field__printed) > input,
+  .field:has(> .field__printed) > select { display: none; }
   .field > .field__printed { font-size: var(--t-body); color: #000; }
   .field > .field__printed.num { text-align: left; }
   .field > .echo {

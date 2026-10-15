@@ -8,7 +8,7 @@ test('runMigrations creates the schema and is idempotent', async () => {
 
   const first = await runMigrations(pool);
   assert.deepEqual(first,
-    ['001_init.sql', '002_contract_owner.sql', '003_execution_expenditure.sql']);
+    ['001_init.sql', '002_contract_owner.sql', '003_execution_expenditure.sql', '005_span_basis.sql']);
 
   const { rows } = await pool.query(
     `SELECT table_name FROM information_schema.tables

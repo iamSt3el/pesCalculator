@@ -102,6 +102,16 @@ v  = [W/8, 3W/8, 3W/4, W]                                 (cumulative value)
 s  = [v1, v2−v1, v3−v2, v4−v3]  =  [W/8, W/4, 3W/8, W/4]  (span value)
 ```
 
+**Period basis.** The contract chooses which completion date closes the
+period (`span_basis`, set on Main Data as "Calculate from"): `actual` (the
+default, and what the workbook does) or `stipulated`. Wherever this spec says
+`actual_completion`, read the chosen date: it cuts the four spans, lists the
+months of the period and the days each month offers, and bounds the schedule
+and the quarters under consideration. A month outside the period that still
+carries recorded days or an adjustment stays listed, so nothing is billed out
+of sight. A missing chosen date, or one before commencement, is reported as
+`invalid_period` and nothing is spread.
+
 `round` is half-away-from-zero to zero decimals, matching Excel's `ROUND`.
 
 For each month the operator enters days worked in each of the four spans. The

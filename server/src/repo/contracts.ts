@@ -16,7 +16,7 @@ export interface ContractBundle {
 const CONTRACT_COLUMNS = `
   id, agreement_no, contractor, work_name, wo_no_date, wo_amount, work_done_amount,
   bid_date::text, commencement::text, stipulated_completion::text, actual_completion::text,
-  bitumen_offset_days, already_paid, schedule_basis`;
+  bitumen_offset_days, already_paid, schedule_basis, span_basis`;
 
 interface ContractDbRow {
   id: number; agreement_no: string; contractor: string; work_name: string; wo_no_date: string;
@@ -24,6 +24,7 @@ interface ContractDbRow {
   stipulated_completion: string | null; actual_completion: string | null;
   bitumen_offset_days: number; already_paid: number;
   schedule_basis: ContractInput['scheduleBasis'];
+  span_basis: ContractInput['spanBasis'];
 }
 
 const toRecord = (r: ContractDbRow): ContractRecord => ({
@@ -41,6 +42,7 @@ const toRecord = (r: ContractDbRow): ContractRecord => ({
   bitumenOffsetDays: r.bitumen_offset_days,
   alreadyPaid: r.already_paid,
   scheduleBasis: r.schedule_basis,
+  spanBasis: r.span_basis,
 });
 
 /** Spec 3.2 defaults: POL keys off the bid month, bitumen off the offset month. */
@@ -218,7 +220,7 @@ export async function updateContract(id: number, patch: Partial<ContractInput>):
     bidDate: 'bid_date', commencement: 'commencement',
     stipulatedCompletion: 'stipulated_completion', actualCompletion: 'actual_completion',
     bitumenOffsetDays: 'bitumen_offset_days', alreadyPaid: 'already_paid',
-    scheduleBasis: 'schedule_basis',
+    scheduleBasis: 'schedule_basis', spanBasis: 'span_basis',
   };
   const sets: string[] = [];
   const values: unknown[] = [];

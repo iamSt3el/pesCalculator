@@ -1,9 +1,11 @@
+import { periodEnd, type SpanBasis } from './api.ts';
 import { blockedStages, type ProblemLike, type StageKey } from './problems.ts';
 
 export type StageReadiness = Record<StageKey, boolean>;
 
 interface ReadinessBundle {
-  contract: { agreementNo: string; workDoneAmount: number; bidDate: string; commencement: string; actualCompletion: string };
+  contract: { agreementNo: string; workDoneAmount: number; bidDate: string; commencement: string;
+    actualCompletion: string; stipulatedCompletion?: string; spanBasis?: SpanBasis };
   components: Array<{ percent: number }>;
   progress: Array<{ month: string }>;
 }
@@ -24,7 +26,7 @@ export function computeReadiness(
   const percentTotal = bundle.components.reduce((a, c) => a + c.percent, 0);
   const mainData = Boolean(
     bundle.contract.agreementNo && bundle.contract.bidDate &&
-    bundle.contract.commencement && bundle.contract.actualCompletion &&
+    bundle.contract.commencement && periodEnd(bundle.contract) &&
     bundle.contract.workDoneAmount > 0 && Math.abs(percentTotal - 100) < 1e-9,
   );
   const blocked = calculation ? blockedStages(calculation.problems) : null;

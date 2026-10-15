@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api, type ExpenditureRow } from '../api.ts';
+import { api, periodEnd, periodEndName, type ExpenditureRow } from '../api.ts';
 import { useContract, useReportSave } from '../ContractLayout.tsx';
 import { useGridKeys } from '../grid.ts';
 import { formatMonth, formatRupees } from '../format.ts';
@@ -28,9 +28,9 @@ export function ExecutionGrid() {
 
   // The same months as the spanwise grid, plus any month still holding a figure
   // outside the period: the schedule bills it, so it has to be seen here.
-  const period = contract.commencement && contract.actualCompletion
-    && contract.actualCompletion >= contract.commencement
-    ? monthsBetween(contract.commencement.slice(0, 7), contract.actualCompletion.slice(0, 7))
+  const end = periodEnd(contract);
+  const period = contract.commencement && end && end >= contract.commencement
+    ? monthsBetween(contract.commencement.slice(0, 7), end.slice(0, 7))
     : [];
   const months = [...new Set([
     ...period, ...rows.filter((r) => r.amount !== 0).map((r) => r.month),
@@ -55,7 +55,7 @@ export function ExecutionGrid() {
         <div className="section-head"><h2>B · Expenditure execution wise</h2></div>
         <div className="panel">
           <p className="flush">
-            Set the date of commencement and the actual date of completion above, and the months appear here.
+            Set the date of commencement and the {periodEndName(contract)} above, and the months appear here.
           </p>
         </div>
       </section>

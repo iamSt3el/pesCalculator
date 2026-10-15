@@ -13,6 +13,9 @@ export type BaseRule = 'quarter_average' | 'bid_month' | 'offset_month';
  */
 export type ScheduleBasis = 'spanwise' | 'execution';
 
+/** Which completion date closes the period the four spans are cut from. */
+export type SpanBasis = 'actual' | 'stipulated';
+
 export type Month = string;    // 'YYYY-MM'
 export type Quarter = string;  // 'YYYY-Qn'
 export type IsoDate = string;  // 'YYYY-MM-DD'
@@ -53,6 +56,7 @@ export interface ContractInput {
   bitumenOffsetDays: number;
   alreadyPaid: number;
   scheduleBasis: ScheduleBasis;
+  spanBasis: SpanBasis;
 }
 
 export interface ProgressRow {

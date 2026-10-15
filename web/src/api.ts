@@ -88,6 +88,28 @@ export const SCHEDULE_BASIS_LABELS: Record<ScheduleBasis, string> = {
   execution: 'B · Expenditure execution wise',
 };
 
+/** Which completion date closes the period the four spans are cut from. */
+export type SpanBasis = 'actual' | 'stipulated';
+
+export const SPAN_BASIS_LABELS: Record<SpanBasis, string> = {
+  actual: 'Actual date of completion',
+  stipulated: 'Stipulated date of completion',
+};
+
+/**
+ * The date the contract period closes on, which the whole calculation runs to:
+ * the actual date of completion, or the stipulated one when chosen.
+ */
+export function periodEnd(
+  contract: { spanBasis?: SpanBasis; actualCompletion: string; stipulatedCompletion?: string },
+): string {
+  return contract.spanBasis === 'stipulated' ? contract.stipulatedCompletion ?? '' : contract.actualCompletion;
+}
+
+/** The chosen completion date in words, for messages that ask for it. */
+export const periodEndName = (contract: { spanBasis?: SpanBasis }): string =>
+  contract.spanBasis === 'stipulated' ? 'stipulated date of completion' : 'actual date of completion';
+
 export interface Contract {
   id: number;
   agreementNo: string; contractor: string; workName: string; woNoDate: string;
@@ -95,6 +117,7 @@ export interface Contract {
   bidDate: string; commencement: string; stipulatedCompletion: string; actualCompletion: string;
   bitumenOffsetDays: number; alreadyPaid: number;
   scheduleBasis: ScheduleBasis;
+  spanBasis: SpanBasis;
 }
 
 export interface ProgressRow { month: string; spanDays: [number, number, number, number] }

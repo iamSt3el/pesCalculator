@@ -36,3 +36,9 @@ test('the print stage fills in only once the bill is free of problems', () => {
   assert.equal(computeReadiness(complete, [{ month: '2023-09' }], withProblem).print, false);
   assert.equal(computeReadiness(complete, [{ month: '2023-09' }], clean).print, true);
 });
+
+test('main data asks for whichever completion date the contract calculates from', () => {
+  const stipulated = { ...complete.contract, spanBasis: 'stipulated' as const };
+  assert.equal(computeReadiness({ ...complete, contract: { ...stipulated, stipulatedCompletion: '' } }, [], null).mainData, false);
+  assert.equal(computeReadiness({ ...complete, contract: { ...stipulated, stipulatedCompletion: '2024-01-31' } }, [], null).mainData, true);
+});

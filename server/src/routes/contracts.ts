@@ -20,6 +20,7 @@ const contractPatch = z.object({
   bitumenOffsetDays: z.number().int().min(0).max(365),
   alreadyPaid: z.number(),
   scheduleBasis: z.enum(['spanwise', 'execution']),
+  spanBasis: z.enum(['actual', 'stipulated']),
 }).partial();
 
 const componentsBody = z.array(z.object({

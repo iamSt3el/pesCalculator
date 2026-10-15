@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api, type Contract } from '../api.ts';
+import { api, periodEndName, SPAN_BASIS_LABELS, type Contract, type SpanBasis } from '../api.ts';
 import { ComponentTable } from '../components/ComponentTable.tsx';
 import { ExecutionGrid } from '../components/ExecutionGrid.tsx';
 import { SpanwiseGrid } from '../components/SpanwiseGrid.tsx';
@@ -114,12 +114,22 @@ export function MainDataPage() {
           {date('commencement', 'Date of commencement')}
           {date('stipulatedCompletion', 'Stipulated date of completion')}
           {date('actualCompletion', 'Actual date of completion')}
+          <label className="field">
+            Calculate from
+            <select value={form.spanBasis}
+                    onChange={(e) => set({ spanBasis: e.target.value as SpanBasis })}>
+              <option value="actual">{SPAN_BASIS_LABELS.actual}</option>
+              <option value="stipulated">{SPAN_BASIS_LABELS.stipulated}</option>
+            </select>
+            <span className="print-only field__printed">{SPAN_BASIS_LABELS[form.spanBasis]}</span>
+          </label>
           {number('bitumenOffsetDays', 'Bitumen base offset (days before bid)')}
           {number('alreadyPaid', 'Escalation already paid', { money: true })}
         </div>
         {calculation && (
           <p className="hint stack-sm flush-bottom">
-            Work period <strong>{calculation.spans.totalDays} days</strong>, in four spans ending{' '}
+            Work period <strong>{calculation.spans.totalDays} days</strong>, to the{' '}
+            {periodEndName(form)}, in four spans ending{' '}
             {calculation.spans.endDates.map(formatDate).join(', ')}. Base quarter{' '}
             <strong>{calculation.baseQuarter}</strong>, from the bid date.
           </p>

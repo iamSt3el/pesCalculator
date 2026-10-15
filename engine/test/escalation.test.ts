@@ -282,3 +282,54 @@ test('rates absent from a period that carries no value are not reported missing'
   const missing = r.problems.find((p) => p.code === 'missing_rates');
   assert.equal(missing?.months?.includes('2023-12') ?? false, false);
 });
+
+// Agreement 168 finished two months behind a stipulated date of 23-Dec-2023.
+const LATE = {
+  ...input,
+  contract: { ...CONTRACT_168, stipulatedCompletion: '2023-12-23' },
+};
+
+test('the period runs to actual completion unless the contract says otherwise', () => {
+  const r = calculate(LATE);
+  assert.equal(r.spans.totalDays, 152);
+  assert.equal(r.spans.endDates[3], '2024-02-23');
+  assert.equal(r.schedule.rows.at(-1)!.month, '2024-02');
+});
+
+test('on the stipulated basis the whole calculation runs to the stipulated date', () => {
+  // Agreement 168's days and adjustments reach into 2024, and a month carrying
+  // money is always listed, so they are left out to see the period alone.
+  const r = calculate({
+    ...LATE, contract: { ...LATE.contract, spanBasis: 'stipulated' as const },
+    progress: [], adjustments: new Map<string, number>(),
+  });
+  assert.equal(r.spans.totalDays, 90);
+  assert.deepEqual(r.spans.days, [23, 22, 23, 22]);
+  assert.equal(r.spans.endDates[3], '2023-12-23');
+  // The months, the days they offer, and the quarters stop there too.
+  assert.deepEqual(r.schedule.rows.map((x) => x.month),
+    ['2023-09', '2023-10', '2023-11', '2023-12']);
+  assert.equal(r.monthDays.get('2023-12'), 23);
+  assert.equal(r.monthDays.has('2024-01'), false);
+  assert.deepEqual(r.quarters, ['2023-Q3', '2023-Q4']);
+  assert.deepEqual(
+    r.lines.filter((l) => l.component === 'bitumen').map((l) => l.period),
+    ['2023-09', '2023-10', '2023-11', '2023-12']);
+});
+
+test('the stipulated basis without a stipulated date is reported, not thrown', () => {
+  const r = calculate({
+    ...LATE, contract: { ...LATE.contract, spanBasis: 'stipulated' as const, stipulatedCompletion: '' },
+  });
+  assert.equal(r.spans.totalDays, 0);
+  assert.ok(r.problems.some((p) => p.code === 'invalid_period' && /stipulated/.test(p.message)));
+});
+
+test('a stipulated date before commencement is reported, and nothing is spread', () => {
+  const r = calculate({
+    ...LATE, contract: { ...LATE.contract, spanBasis: 'stipulated' as const, stipulatedCompletion: '2023-09-01' },
+  });
+  assert.equal(r.spans.totalDays, 0);
+  assert.equal(r.monthDays.size, 0);
+  assert.ok(r.problems.some((p) => p.code === 'invalid_period' && /Stipulated completion/.test(p.message)));
+});

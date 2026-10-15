@@ -7,7 +7,7 @@ import {
   buildSchedule, computeSpans, emptySpanTable, type PaymentSchedule, type SpanTable,
 } from './spans.ts';
 import type {
-  ComponentConfig, ComponentKey, ContractInput, Month,
+  ComponentConfig, ComponentKey, ContractInput, IsoDate, Month,
   ProgressRow, Quarter, RateRow,
 } from './types.ts';
 
@@ -56,6 +56,16 @@ export interface CalculationResult {
   problems: Problem[];
 }
 
+/**
+ * The date the contract period closes on: the actual date of completion, or the
+ * stipulated one when the contract is set to calculate from that.
+ */
+export function periodEnd(
+  contract: Pick<ContractInput, 'spanBasis' | 'actualCompletion' | 'stipulatedCompletion'>,
+): IsoDate {
+  return contract.spanBasis === 'stipulated' ? contract.stipulatedCompletion : contract.actualCompletion;
+}
+
 /** Spec 3.4: factor x percent/100 x value x (current - base) / base */
 function lineAmount(
   factor: number, percent: number, value: number,
@@ -73,19 +83,25 @@ export function calculate(input: CalculationInput): CalculationResult {
   const problems: Problem[] = [];
   const rates = buildRateIndex(input.rates);
 
+  // The period closes on whichever completion date the contract names, actual
+  // or stipulated, and that one date drives everything below: the spans, the
+  // months listed, the days each month offers, the schedule and its quarters.
+  const end = periodEnd(contract);
+  const endName = contract.spanBasis === 'stipulated' ? 'stipulated' : 'actual';
+
   // A contract is created before its dates are known. Spreading the work over a
   // period that has no ends produced a NaN date and threw, so the whole
   // calculation endpoint failed for every contract until both dates were filled.
-  const hasPeriod = Boolean(contract.commencement && contract.actualCompletion);
+  const hasPeriod = Boolean(contract.commencement && end);
   if (!hasPeriod) {
     problems.push({
       code: 'invalid_period',
-      message: 'The date of commencement and the actual date of completion are both needed.',
+      message: `The date of commencement and the ${endName} date of completion are both needed.`,
     });
-  } else if (contract.actualCompletion < contract.commencement) {
+  } else if (end < contract.commencement) {
     problems.push({
       code: 'invalid_period',
-      message: 'Actual completion is earlier than the date of commencement.',
+      message: `${endName === 'actual' ? 'Actual' : 'Stipulated'} completion is earlier than the date of commencement.`,
     });
   }
 
@@ -97,12 +113,15 @@ export function calculate(input: CalculationInput): CalculationResult {
     });
   }
 
-  const spans = hasPeriod
-    ? computeSpans(contract.commencement, contract.actualCompletion, contract.workDoneAmount)
+  // A period that ends before it begins has nothing to spread, just as one with
+  // a missing end: cutting it would give spans of negative days.
+  const canSpread = hasPeriod && end >= contract.commencement;
+  const spans = canSpread
+    ? computeSpans(contract.commencement, end, contract.workDoneAmount)
     : emptySpanTable();
   // Every month of the period is listed on the schedule, an idle one at zero,
   // so the schedule and its quarters cover the whole period the bill is for.
-  const periodMonths = monthsOfPeriod(contract.commencement, contract.actualCompletion);
+  const periodMonths = monthsOfPeriod(contract.commencement, end);
   const basis = contract.scheduleBasis ?? 'spanwise';
   const expenditure = input.expenditure ?? new Map<Month, number>();
   const schedule = buildSchedule(progress, spans, adjustments, {
@@ -165,8 +184,8 @@ export function calculate(input: CalculationInput): CalculationResult {
   // span than the month can have earned. Nothing checked this: `max=31` on the
   // input is a hint the browser does not enforce, and the API takes any
   // non-negative integer.
-  const monthDays = hasPeriod
-    ? availableDays(contract.commencement, contract.actualCompletion)
+  const monthDays = canSpread
+    ? availableDays(contract.commencement, end)
     : new Map<Month, number>();
   // On the execution basis the spanwise grid bills nothing, so a slip in it
   // cannot touch the bill and must not hold it provisional.
@@ -189,7 +208,7 @@ export function calculate(input: CalculationInput): CalculationResult {
   const missingMonths = new Set<Month>(missing);
 
   const quarters = quartersUnderConsideration(
-    schedule, contract.commencement, contract.actualCompletion);
+    schedule, contract.commencement, end);
   const lines: EscalationLine[] = [];
   const componentTotals = new Map<ComponentKey, number>();
 

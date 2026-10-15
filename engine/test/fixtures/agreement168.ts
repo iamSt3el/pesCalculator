@@ -32,6 +32,7 @@ export const CONTRACT_168: ContractInput = {
   bitumenOffsetDays: 28,
   alreadyPaid: 0,
   scheduleBasis: 'spanwise',
+  spanBasis: 'actual',
 };
 
 export const COMPONENTS_168: ComponentConfig[] = [
